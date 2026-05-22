@@ -254,7 +254,7 @@
             </div>
             <div>
               <div class="calc-field-label">적용 방식</div>
-              <div class="calc-hint" style="margin-top:14px;">평/㎡ 입력 시 필요 박스 수에 반영되고, 박스 수 입력 시에는 입력 박스 수에 로스율이 적용됩니다.</div>
+              <div class="calc-hint" style="margin-top:14px;">평/㎡ 입력 또는 박스 수 입력 시 로스율이 반영되어 정밀 수량이 도출됩니다.</div>
             </div>
           </div>
           <div>
@@ -758,13 +758,18 @@ function runCalculator() {
     inputSqm = raw;
     inputPy = raw / PY_FACTOR;
   } else {
-    inputBoxes = Math.ceil(raw);
+    inputBoxes = raw; // 정밀 수치 보존을 위해 Math.ceil 제거
     inputSqm = inputBoxes * p.box_m2;
     inputPy = inputSqm / PY_FACTOR;
   }
 
-  const targetSqmWithLoss = inputSqm * lossMultiplier;
-  calcBoxes = Math.ceil(targetSqmWithLoss / p.box_m2);
+  // [수정 사항 2] 정밀 수치 계산을 위해 필요 박스 수량에 올림(Math.ceil)을 적용하지 않고 소수점 그대로 유지
+  if (inputMode === 'box') {
+    calcBoxes = inputBoxes * lossMultiplier;
+  } else {
+    const targetSqmWithLoss = inputSqm * lossMultiplier;
+    calcBoxes = targetSqmWithLoss / p.box_m2;
+  }
   
   const finalCoverageSqm = calcBoxes * p.box_m2;
   const finalCoveragePy = finalCoverageSqm / PY_FACTOR;
@@ -779,15 +784,15 @@ function runCalculator() {
   } else if (inputMode === 'sqm') {
     total = Math.round(finalCoverageSqm * sqmPrice); 
   } else {
-    total = calcBoxes * boxPrice;
+    total = Math.round(calcBoxes * boxPrice);
   }
 
   const totalVat = calcVatIncluded(total);
   const priceLabel = `${party === 'consumer' ? '소비자가' : '업체가'} / ${priceMode === 'material' ? '자재 별도' : '시공비 포함'}`;
 
-  $('resultAreaText').textContent = inputMode === 'py' ? `${raw}평` : inputMode === 'sqm' ? `${raw}㎡` : `${inputBoxes}박스`;
+  $('resultAreaText').textContent = inputMode === 'py' ? `${raw}평` : inputMode === 'sqm' ? `${raw}㎡` : `${raw}박스`;
   $('resultAreaSub').textContent = inputMode === 'py' ? `(${formatDecimal(inputSqm)}㎡)` : inputMode === 'sqm' ? `(${formatDecimal(inputPy)}평)` : `(${formatDecimal(inputSqm)}㎡)`;
-  $('resultBoxes').textContent = `${calcBoxes}박스`;
+  $('resultBoxes').textContent = `${formatDecimal(calcBoxes)}박스`; // 결과창에 소수점까지 표시
   $('resultBoxesSub').textContent = `(${formatDecimal(finalCoverageSqm)}㎡)`; 
   $('resultTotal').textContent = fmt(total);
   $('resultTotalVat').textContent = `(VAT 포함가) ${fmt(totalVat)}`;
@@ -800,7 +805,7 @@ function runCalculator() {
   $('summaryArea').textContent = `박스 환산 면적 ${formatArea(finalCoveragePy, finalCoverageSqm)}`;
   $('summaryMode').textContent = priceLabel;
   $('summaryLoss').textContent = lossRate ? `${formatDecimal(lossRate)}%` : '0%';
-  $('calcNotice').textContent = `필요 수량 ${calcBoxes}박스에 맞춰 면적을 ${formatDecimal(finalCoverageSqm)}㎡로 계산했습니다.`;
+  $('calcNotice').textContent = `필요 수량 ${formatDecimal(calcBoxes)}박스에 맞춰 면적을 ${formatDecimal(finalCoverageSqm)}㎡로 정밀 계산했습니다.`;
 }
 
 function resetCalculator() { 
@@ -912,7 +917,7 @@ if (document.readyState === 'loading') {
 }
 
 /* ==========================================================================
-   [신규 추가] 단가표 구글 스프레드시트 API 연동 및 자동 갱신 모듈
+   단가표 구글 스프레드시트 API 연동 및 자동 갱신 모듈
    ========================================================================== */
 (async function() {
     const PRICING_CONFIG = {
@@ -946,9 +951,11 @@ if (document.readyState === 'loading') {
                 const code = String(row.c[0].v || '').trim();
                 if (!code || code === '품번') return;
 
-                // 지정해주신 A열 ~ M열 순서 그대로 인덱스(0~12) 매칭 데이터 수집 및 예외 정수화
+                // 지정해주신 A열 ~ M열 순서 포맷에 맞춘 완벽 인덱스 매칭 데이터 수집
                 const name = row.c[1]?.v ? String(row.c[1].v).trim() : '-';
                 const spec = row.c[2]?.v ? String(row.c[2].v).trim() : '-';
+                
+                // [수정 사항 1] D열(박스당 장수)과 E열(박스당 면적) 데이터의 수집 순서 교정 완료
                 const sheets_per_box = Number(row.c[3]?.v) || 0;
                 const box_m2 = Number(row.c[4]?.v) || 0;
 
@@ -962,7 +969,7 @@ if (document.readyState === 'loading') {
                 const vendor_sqm = Number(row.c[11]?.v) || 0;
                 const vendor_box = Number(row.c[12]?.v) || 0;
 
-                // 우리 시스템 내부 표준 오브젝트 구조 설계 매핑
+                // 내부 마스터 데이터 구조 빌드
                 parsedProducts.push({
                     code: code,
                     name: name,
@@ -984,7 +991,7 @@ if (document.readyState === 'loading') {
                 });
             });
 
-            // 원격 데이터 정상 파싱 완료 시 받침대용 데이터를 완전히 교체하고 UI 리프레시 실행
+            // 임시 받침대를 파싱해온 원격 시트 배열로 완전 교체 후 화면 갱신
             if (parsedProducts.length > 0) {
                 products = parsedProducts;
                 fillSelect();
@@ -997,7 +1004,6 @@ if (document.readyState === 'loading') {
         }
     }
 
-    // 페이지가 시작할 때 자동으로 단가 데이터를 백그라운드 로드함
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', fetchPricingData);
     } else {
