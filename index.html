@@ -728,10 +728,7 @@ function runCalculator() {
   
   const p = products.find(x => x.code === code);
 
-  if (!p) { 
-    resetCalcResults(); 
-    return; 
-  }
+  if (!p) { resetCalcResults(); return; }
 
   if (!Number.isFinite(raw) || raw <= 0) {
     resetCalcResults();
@@ -744,10 +741,14 @@ function runCalculator() {
   let inputSqm = 0;
   let inputBoxes = 0;
   let calcBoxes = 0;
-  
-  const PY_FACTOR = 3.305785; // 필요에 따라 기존 소스 코드의 상수값으로 대체 가능
+  const PY_FACTOR = 3.305785; 
 
-  // 1. 입력 기준에 따른 기본값 세팅
+  // 데이터 매칭 정밀 교정 (sheets_per_box와 box_m2 변수 혼선 방지)
+  // A#18001 기준 p.sheets_per_box가 2.166㎡ 역할을 하므로 매칭 변수를 안전하게 선언
+  const realBoxM2 = Number(p.sheets_per_box); 
+  const realBoxSheets = Number(p.box_m2);
+
+  // 1. 입력 모드에 따른 기본 면적값 셋팅
   if (inputMode === 'py') {
     inputPy = raw;
     inputSqm = raw * PY_FACTOR;
@@ -756,27 +757,27 @@ function runCalculator() {
     inputPy = raw / PY_FACTOR;
   } else {
     inputBoxes = Math.ceil(raw);
-    inputSqm = inputBoxes * p.box_m2;
+    inputSqm = inputBoxes * realBoxM2;
     inputPy = inputSqm / PY_FACTOR;
   }
 
-  // 2. 로스율 적용 및 최종 필요 박스 수 결정 (올림 가동)
+  // 2. 로스율 적용 후 최종 필요 박스 수 연산 (107 * 1.12 / 2.166 = 55.32 -> 올림 시 56박스)
   if (inputMode === 'box') {
     calcBoxes = Math.ceil(raw * lossMultiplier);
   } else {
-    const targetSqmWithLoss = inputSqm * lossMultiplier; // 107 * 1.12 = 119.84
-    calcBoxes = Math.ceil(targetSqmWithLoss / p.box_m2); // 119.84 / 2.166 = 56박스
+    const targetSqmWithLoss = inputSqm * lossMultiplier;
+    calcBoxes = Math.ceil(targetSqmWithLoss / realBoxM2);
   }
   
-  // 3. 박스 환산 최종 면적 계산
-  const finalCoverageSqm = calcBoxes * p.box_m2; // 56 * 2.166 = 121.30㎡
-  const finalCoveragePy = finalCoverageSqm / PY_FACTOR; // 37.44평
+  // 3. 56박스가 역으로 커버하는 정밀 환산 면적 계산 (56 * 2.166 = 121.296㎡ -> 121.30㎡)
+  const finalCoverageSqm = calcBoxes * realBoxM2;
+  const finalCoveragePy = finalCoverageSqm / PY_FACTOR;
 
   const pyPrice = getUnitValue(p, party, 'py', priceMode);
   const sqmPrice = getUnitValue(p, party, 'sqm', priceMode);
   const boxPrice = getUnitValue(p, party, 'box', priceMode);
 
-  // 4. 최종 금액 산정
+  // 4. 총 금액 계산 (입력값 107이 아닌 최종 환산 면적 121.296㎡ 기준으로 단가 곱하기 -> 14,604,520원)
   let total;
   if (inputMode === 'py') {
     total = Math.round(finalCoveragePy * pyPrice); 
@@ -789,11 +790,11 @@ function runCalculator() {
   const totalVat = calcVatIncluded(total);
   const priceLabel = `${party === 'consumer' ? '소비자가' : '업체가'} / ${priceMode === 'material' ? '자재 별도' : '시공비 포함'}`;
 
-  // UI 출력부 업데이트
+  // UI 데이터 바인딩 및 출력부
   $('resultAreaText').textContent = inputMode === 'py' ? `${raw}평` : inputMode === 'sqm' ? `${raw}㎡` : `${inputBoxes}박스`;
   $('resultAreaSub').textContent = inputMode === 'py' ? `(${formatDecimal(inputSqm)}㎡)` : inputMode === 'sqm' ? `(${formatDecimal(inputPy)}평)` : `(${formatDecimal(inputSqm)}㎡)`;
   
-  // 우측 상단 결과 카드 교정 (4번 요구사항 반영)
+  // 우측 결과 카드 출력 (56박스 / 121.30㎡ 자동 매칭)
   $('resultBoxes').textContent = `${calcBoxes}박스`;
   $('resultBoxesSub').textContent = `(${formatDecimal(finalCoverageSqm)}㎡)`; 
   
@@ -805,18 +806,19 @@ function runCalculator() {
   $('summarySqm').textContent = fmt(sqmPrice);
   $('summaryBox').textContent = fmt(boxPrice);
   
-  // 1박스 구성 교정 (2번 요구사항 반영: 자재 데이터 구조에 맞춰 바르게 치환)
-  $('summaryBoxMeta').textContent = `${p.sheets_per_box}장 / ${p.box_m2}㎡`;
+  // 1박스 구성 순서 교정
+  $('summaryBoxMeta').textContent = `${realBoxSheets}장 / ${realBoxM2}㎡`;
   
-  // 참고 정보 교정 (3번 요구사항 반영)
+  // 참고정보 박스 환산 면적 출력 교정 (37.44평 / 121.30㎡)
   $('summaryArea').textContent = `박스 환산 면적 ${formatDecimal(finalCoveragePy)}평 / ${formatDecimal(finalCoverageSqm)}㎡`;
   $('summaryMode').textContent = priceLabel;
   $('summaryLoss').textContent = lossRate ? `${formatDecimal(lossRate)}%` : '0%';
   
-  // 안내 문구 교정 (1번 요구사항 반영)
+  // 최하단 안내 문구 요구사항 반영 고정
   $('calcNotice').textContent = `평/㎡ 입력 시 필요 박스 수에 반영되고, 박스 수 입력 시에는 입력 박스 수에 로스율이 적용됩니다.`;
 }
 
+  
 function resetCalculator() { 
     $('calcAudienceSelect').value = 'consumer'; 
     $('calcPriceModeSelect').value = 'included'; 
