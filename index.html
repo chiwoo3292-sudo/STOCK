@@ -254,7 +254,7 @@
             </div>
             <div>
               <div class="calc-field-label">적용 방식</div>
-              <div class="calc-hint" style="margin-top:14px;">평/㎡ 입력 또는 박스 수 입력 시 로스율이 반영되어 정밀 수량이 도출됩니다.</div>
+              <div class="calc-hint" style="margin-top:14px;">평/㎡ 입력 시 필요 박스 수에 반영되고, 박스 수 입력 시에는 입력 박스 수에 로스율이 적용됩니다.</div>
             </div>
           </div>
           <div>
@@ -770,8 +770,8 @@ function runCalculator() {
   }
   
   // 3. 56박스가 역으로 커버하는 정밀 환산 면적 계산 (56 * 2.166 = 121.296㎡ -> 121.30㎡)
-  const finalCoverageSqm = calcBoxes * realBoxM2;
-  const finalCoveragePy = finalCoverageSqm / PY_FACTOR;
+  const finalCoverageSqm = calcBoxes * p.sheets_per_box; 
+  const finalCoveragePy = finalCoverageSqm / 3.24;
 
   const pyPrice = getUnitValue(p, party, 'py', priceMode);
   const sqmPrice = getUnitValue(p, party, 'sqm', priceMode);
