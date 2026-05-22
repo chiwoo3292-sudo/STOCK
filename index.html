@@ -1009,6 +1009,13 @@ function getCellVal(cell) {
     return (cell.v !== null && cell.v !== undefined) ? String(cell.v).trim() : '';
 }
 
+// 쉼표·공백·원 기호 등 제거 후 숫자로 변환
+function toNum(cell) {
+    const raw = getCellVal(cell).replace(/[,\s₩원]/g, "");
+    const n = Number(raw);
+    return Number.isFinite(n) ? Math.round(n) : 0;
+}
+
 // ============================================================
 //  PRICE 시트 → products 배열 로드
 //  컬럼 순서: 품번(0) 품명(1) 스펙(2) 박스면적(3) 박스당장수(4)
@@ -1023,19 +1030,19 @@ async function loadProducts() {
             code:           getCellVal(row.c[0]),
             name:           getCellVal(row.c[1]),
             spec:           getCellVal(row.c[2]),
-            box_m2:         parseFloat(getCellVal(row.c[3])) || 0,
-            sheets_per_box: parseInt(getCellVal(row.c[4]),  10) || 0,
+            box_m2:         toNum(row.c[3]) || parseFloat(getCellVal(row.c[3])) || 0,
+            sheets_per_box: toNum(row.c[4]),
             consumer: {
-                py:       parseInt(getCellVal(row.c[5]),  10) || 0,
-                material: parseInt(getCellVal(row.c[6]),  10) || 0,
-                sqm:      parseInt(getCellVal(row.c[7]),  10) || 0,
-                box:      parseInt(getCellVal(row.c[8]),  10) || 0
+                py:       toNum(row.c[5]),
+                material: toNum(row.c[6]),
+                sqm:      toNum(row.c[7]),
+                box:      toNum(row.c[8])
             },
             vendor: {
-                py:       parseInt(getCellVal(row.c[9]),  10) || 0,
-                material: parseInt(getCellVal(row.c[10]), 10) || 0,
-                sqm:      parseInt(getCellVal(row.c[11]), 10) || 0,
-                box:      parseInt(getCellVal(row.c[12]), 10) || 0
+                py:       toNum(row.c[9]),
+                material: toNum(row.c[10]),
+                sqm:      toNum(row.c[11]),
+                box:      toNum(row.c[12])
             }
         }));
 }
