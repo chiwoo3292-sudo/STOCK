@@ -709,7 +709,7 @@ function resetCalcResults() {
     }
   }); 
 
-  $('calcNotice').textContent = '평수, ㎡, 박스 수를 입력하면 결과가 자동으로 계산됩니다. 자재 별도 선택 시에는 박스당 단가 기준으로 계산됩니다.'; 
+ $('calcNotice').textContent = `필요 수량 ${calcBoxes}박스에 맞춰 면적을 ${formatDecimal(finalCoverageSqm)}㎡로 계산했습니다.`;
 }
 
 /* ==========================================================================
@@ -766,11 +766,11 @@ function runCalculator() {
     calcBoxes = Math.ceil(raw * lossMultiplier);
   } else {
     const targetSqmWithLoss = inputSqm * lossMultiplier;
-    calcBoxes = Math.ceil(targetSqmWithLoss / realBoxM2);
+    calcBoxes = Math.ceil(targetSqmWithLoss / p.sheets_per_box);
   }
   
   // 3. 56박스가 역으로 커버하는 정밀 환산 면적 계산 (56 * 2.166 = 121.296㎡ -> 121.30㎡)
-  const finalCoverageSqm = calcBoxes * p.sheets_per_box; 
+  const finalCoverageSqm = calcBoxes * p.sheets_per_box;
   const finalCoveragePy = finalCoverageSqm / 3.24;
 
   const pyPrice = getUnitValue(p, party, 'py', priceMode);
@@ -807,7 +807,7 @@ function runCalculator() {
   $('summaryBox').textContent = fmt(boxPrice);
   
   // 1박스 구성 순서 교정
-  $('summaryBoxMeta').textContent = `${realBoxSheets}장 / ${realBoxM2}㎡`;
+  $('summaryBoxMeta').textContent = `${p.box_m2}장 / ${p.sheets_per_box}㎡`;
   
   // 참고정보 박스 환산 면적 출력 교정 (37.44평 / 121.30㎡)
   $('summaryArea').textContent = `박스 환산 면적 ${formatDecimal(finalCoveragePy)}평 / ${formatDecimal(finalCoverageSqm)}㎡`;
