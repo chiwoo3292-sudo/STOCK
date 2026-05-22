@@ -761,52 +761,6 @@ function setTab(tabId) {
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.tab === tabId);
   });
-
-
-// 업무 메모장 입력 시 화면 튕김(최하단 고정) 방지 및 자동 높이 조절
-const memoArea = document.getElementById('workMemo');
-if (memoArea) {
-    // 1. 최초 로드 시 저장된 메모 불러오기
-    memoArea.value = localStorage.getItem('baram_work_memo') || '';
-    
-    // 내용에 맞게 높이를 조절하되, 스크롤이 튕기지 않도록 보정하는 함수
-    const autoResizeMemo = () => {
-        // 현재 사용자가 보고 있는 브라우저의 스크롤 위치를 기억합니다.
-        const scrollX = window.scrollX;
-        const scrollY = window.scrollY;
-
-        memoArea.style.height = 'auto';
-        // 최소 높이를 250px로 보장하고 콘텐츠 길이에 맞춰 늘어납니다.
-        memoArea.style.height = Math.max(250, memoArea.scrollHeight) + 'px';
-
-        // 높이가 재계산된 직후, 기억해 둔 원래 스크롤 위치로 화면을 강제 고정합니다.
-        window.scrollTo(scrollX, scrollY);
-    };
-
-    // 2. 글자 타이핑할 때마다 실행
-    memoArea.addEventListener('input', () => {
-        localStorage.setItem('baram_work_memo', memoArea.value);
-        autoResizeMemo();
-    });
-
-    // 3. 메모장 탭을 클릭해서 활성화할 때도 높이를 한 번 맞춰줍니다.
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            if (btn.getAttribute('data-tab') === 'memoTab') {
-                setTimeout(autoResizeMemo, 50);
-            }
-        });
-    });
-}
-  
-
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      if(btn.dataset.tab === 'memoTab') {
-        setTimeout(() => autoResize(memoArea), 10);
-      }
-    });
-  });
   document.querySelectorAll('.tab-panel').forEach(panel => {
     panel.style.display = panel.id === tabId ? 'block' : 'none';
   });
@@ -933,36 +887,7 @@ function initApp() {
   document.querySelectorAll('.js-copy-template').forEach(btn=>btn.addEventListener('click',()=>copyToClipboard(templates[btn.dataset.template] || '')));
   document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>setTab(btn.dataset.tab)));
 }
-const memoArea = document.getElementById('workMemo');
-  const clearBtn = document.getElementById('clearMemo');
-
-  // 높이 자동 조절 함수
-  const autoResize = (el) => {
-    el.style.height = 'auto';
-    el.style.height = el.scrollHeight + 'px';
-  };
-
-  if (memoArea) {
-    memoArea.value = localStorage.getItem('jb_memo_data') || '';
-    
-    // 로드 시 높이 맞추기
-    setTimeout(() => autoResize(memoArea), 100);
-
-    memoArea.addEventListener('input', () => {
-      localStorage.setItem('jb_memo_data', memoArea.value);
-      autoResize(memoArea); // 입력할 때마다 높이 조절
-    });
-  }
-
-  if (clearBtn) {
-    clearBtn.addEventListener('click', () => {
-      if (confirm('메모를 모두 삭제하시겠습니까?')) {
-        memoArea.value = '';
-        localStorage.removeItem('jb_memo_data');
-        autoResize(memoArea); // 삭제 후 높이 초기화
-      }
-    });
-  }// PRICE 시트에서 products 로드 후 앱 초기화
+// PRICE 시트에서 products 로드 후 앱 초기화
 async function startApp() {
     try {
         await loadProducts();
