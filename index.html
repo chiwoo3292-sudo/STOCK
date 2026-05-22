@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="ko">
 <head>
@@ -7,57 +8,64 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@latest/dist/web/static/pretendard.css" />
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <style>
-  .grid-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+  
+.grid-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
   .grid-tabs .quick-preview-trigger .secondary { width: 100%; min-height: 44px; padding: 0 4px; border: 1px solid #d8d8d8; border-radius: 8px; background: #fff; color: #444; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; text-align: center; }
   * { box-sizing:border-box; }
   body { margin:0; font-family:"Pretendard",system-ui,-apple-system,"Segoe UI","Noto Sans KR",sans-serif; background:#f5f5f5; color:#111; }
   .wrap { max-width:1880px; margin:0 auto; padding:10px; }
-  .card { background:#fff; border:1px solid #e8e8e8; border-radius:18px; padding:18px; }
-  .title { margin:0 0 14px; font-size:16px; font-weight:700; }
-  .muted { color:#777; font-size:12px; }
-  .pill { display:inline-flex; align-items:center; min-height:42px; padding:0 12px; border-radius:999px; font-size:12px; color:#444; }
-  .meta-box { white-space:normal; line-height:1.45; }
-  .notice { margin-top:14px; font-size:13px; color:#555; line-height:1.6; }
-  .notice ul { margin:8px 0 0 18px; padding:0; }
-  .layout { display:grid; grid-template-columns:1.3fr 1fr; gap:18px; }
   .tabs { display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; }
   .tab-btn { min-height:40px; padding:0 16px; border:1px solid #d8d8d8; border-radius:999px; background:#fff; color:#444; font-size:13px; font-weight:700; cursor:pointer; }
   .tab-btn.active { background:#111; color:#fff; border-color:#111; }
   .tab-panel { display:none; }
   .tab-panel.active { display:block; }
+  .layout { display:grid; grid-template-columns:1.3fr 1fr; gap:18px; }
+  .card { background:#fff; border:1px solid #e8e8e8; border-radius:18px; padding:18px; }
+  .title { margin:0 0 14px; font-size:16px; font-weight:700; }
   .topbar { display:grid; grid-template-columns:auto minmax(180px, 280px); justify-content:space-between; gap:10px; align-items:center; margin-bottom:12px; }
   .product-add { display:grid; grid-template-columns:minmax(220px, 240px) auto; gap:8px; align-items:center; }
-  .scroll { max-height:730px; overflow:auto; border:1px solid #eee; border-radius:14px; }
-  table { width:100%; border-collapse:collapse; }
-  th, td { padding:9px 10px; border-bottom:1px solid #eee; text-align:left; vertical-align:top; font-size:13px; line-height:1.45; }
-  th { background:#fafafa; color:#444; font-size:12px; position:sticky; top:0; z-index:1; }
-  td.name, td.spec-left, td.spec-right { white-space:nowrap; }
-  .right-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:12px; }
-  .quote-date { color:#777777; font-size:12px; line-height:1.4; white-space:nowrap; text-align:right; margin-left:auto; padding-top:2px; }
-  .right-controls { display:grid; grid-template-columns:1fr auto auto; gap:10px; align-items:center; margin-bottom:10px; }
-  .right-actions-bottom { display:flex; justify-content:flex-end; align-items:center; gap:8px; flex-wrap:wrap; margin-top:12px; }
-  .plain-select.no-capture { border:none; box-shadow:none; background:transparent; width:auto; min-width:0; padding:0 24px 0 0; font-weight:700; }
-  .plain-select.no-capture:focus { outline:none; }
   select, input[type="text"], input[type="number"], textarea { font-family:inherit; font-size:13px; border:1px solid #ddd; border-radius:12px; background:#fff; }
   select, input[type="text"], input[type="number"] { height:38px; padding:0 12px; width:100%; }
   textarea { width:100%; min-height:380px; padding:12px; line-height:1.6; resize:vertical; }
   button { min-height:35px; padding:0 14px; border:1px solid #111; border-radius:12px; background:#111; color:#fff; font-size:12px; font-weight:700; cursor:pointer; }
   button.secondary { background:#fff; color:#111; border-color:#ddd; }
+  .scroll { max-height:730px; overflow:auto; border:1px solid #eee; border-radius:14px; }
+  table { width:100%; border-collapse:collapse; }
+  th, td { padding:9px 10px; border-bottom:1px solid #eee; text-align:left; vertical-align:top; font-size:13px; line-height:1.45; }
+  th { background:#fafafa; color:#444; font-size:12px; position:sticky; top:0; z-index:1; }
+  td.name, td.spec-left, td.spec-right { white-space:nowrap; }
+  .muted { color:#777; font-size:12px; }
+.notice { margin-top:4px; font-size:11px; color:#555; line-height:1.3; }
+.notice ul { margin:2px 0 0 14px; padding:0; }
+  .right-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:12px; }
+  .quote-date { color:#777777; font-size:12px; line-height:1.4; white-space:nowrap; text-align:right; margin-left:auto; padding-top:2px; }
+  .right-controls { display:grid; grid-template-columns:1fr auto auto; gap:10px; align-items:center; margin-bottom:10px; }
+  .plain-select.no-capture { border:none; box-shadow:none; background:transparent; width:auto; min-width:0; padding:0 24px 0 0; font-weight:700; }
+  .plain-select.no-capture:focus { outline:none; }
   .check-row { display:flex; gap:14px; flex-wrap:wrap; align-items:center; }
   .check-chip { display:inline-flex; align-items:center; gap:6px; font-size:12px; color:#444; }
-  .quick-copy-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; align-items: stretch; margin-bottom: 12px; }
-  .quick-copy-label { grid-column: 1 / -1; color: #777; font-size: 12px; margin-bottom: 2px; }
-  .quick-preview-trigger { position: relative; }
-  .quick-preview-trigger .secondary { width: 100%; }
-  .quick-preview { position: absolute; bottom: calc(100% + 8px); left: 0; display: none; width: 280px; max-height: 180px; overflow: auto; padding: 12px; border: 1px solid #ddd; border-radius: 12px; background: #fff; box-shadow: 0 10px 30px rgba(0,0,0,.12); font-size: 12px; line-height: 1.55; color: #333; white-space: pre-wrap; z-index: 20; }
-  .quick-preview-trigger:last-child .quick-preview { left: auto; right: 0; }
-  .quick-preview-trigger:hover .quick-preview, .quick-preview-trigger:focus-within .quick-preview { display: block; }
+  .right-actions-bottom { display:flex; justify-content:flex-end; align-items:center; gap:8px; flex-wrap:wrap; margin-top:12px; }
+ .quick-copy-row { display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; align-items:stretch; margin-bottom:12px; }
+  .quick-copy-label { grid-column:1 / -1; color:#777; font-size:12px; margin-bottom:2px; }
+  .quick-preview-trigger { position:relative; }
+  .quick-preview-trigger .secondary { width:100%; }
+  .quick-preview { position:absolute; bottom:calc(100% + 8px); left:0; display:none; width:280px; max-height:180px; overflow:auto; padding:12px; border:1px solid #ddd; border-radius:12px; background:#fff; box-shadow:0 10px 30px rgba(0,0,0,.12); font-size:12px; line-height:1.55; color:#333; white-space:pre-wrap; z-index:20; }
+  .quick-preview-trigger:last-child .quick-preview { left:auto; right:0; }
+  .quick-preview-trigger:hover .quick-preview, .quick-preview-trigger:focus-within .quick-preview { display:block; }
+  .pill { display:inline-flex; align-items:center; min-height:42px; padding:0 12px; border-radius:999px; font-size:12px; color:#444; }
+  .meta-box { white-space:normal; line-height:1.45; }
+  .toast { position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(12px); background:#111; color:#fff; padding:10px 14px; border-radius:999px; font-size:12px; font-weight:700; opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease; z-index:9999; }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+  .is-capturing .no-capture { display:none !important; }
+  .desktop-only { display:block; }
+  .mobile-only { display:none; }
+
   .calc-layout { display:grid; grid-template-columns:420px 1fr; gap:18px; }
   .calc-form { display:grid; gap:14px; }
   .form-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
   .calc-field-label { margin-bottom:8px; color:#666; font-size:12px; }
   .calc-form select { height:46px; font-size:14px; }
-  .calc-area-input { height:72px!important; padding:0 18px!important; font-size:28px!important; font-weight:800; border-radius:16px!important; }
+  .calc-area-input { height:72px !important; padding:0 18px !important; font-size:28px !important; font-weight:700; border-radius:16px !important; }
   .calc-hint { margin-top:8px; font-size:12px; color:#888; }
   .calc-result-grid { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:12px; }
   .result-card { border:1px solid #ececec; border-radius:16px; padding:16px; background:#fff; }
@@ -73,26 +81,225 @@
   .minor-meta-title { margin:0 0 8px; font-size:12px; color:#888; font-weight:700; }
   .minor-meta-text { font-size:12px; color:#888; line-height:1.6; }
   .calc-notice { font-size:12px; color:#666; line-height:1.6; }
-  .toast { position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(12px); background:#111; color:#fff; padding:10px 14px; border-radius:999px; font-size:12px; font-weight:700; opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease; z-index:9999; }
-  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
-  .is-capturing .no-capture { display:none!important; }
-  .desktop-only { display:block; }
-  .mobile-only { display:none; }
-  .stock-table-wrapper { overflow-x: auto; margin-top: 10px; border-radius: 8px; border: 1px solid #eee; }
-  #stockTable { width: 100%; border-collapse: collapse; font-size: 14px; }
-  #stockTable th { background-color: #f8f9fa; color: #555; padding: 12px 8px; border-bottom: 2px solid #ddd; }
-  #stockTable td { padding: 12px 8px; border-bottom: 1px solid #eee; text-align: center; }
-  .stock-tooltip { position: absolute; display: none; background: rgba(0, 0, 0, 0.8); color: #fff; padding: 8px 12px; border-radius: 5px; font-size: 13px; z-index: 9999; pointer-events: none; line-height: 1.4; }
+
+
+.stock-table-wrapper { overflow-x: auto; margin-top: 10px; border-radius: 8px; border: 1px solid #eee; }
+#stockTable { width: 100%; border-collapse: collapse; font-size: 14px; }
+#stockTable th { background-color: #f8f9fa; color: #555; padding: 12px 8px; border-bottom: 2px solid #ddd; }
+#stockTable td { padding: 12px 8px; border-bottom: 1px solid #eee; text-align: center; }
+
+/* ==========================================================================
+   제출해주신 스타일 맞춤형 계산기 모바일 반응형 & 재고 타이틀 가운데 정렬
+   ========================================================================== */
+
+/* [수정] 재고현황 표 상단 타이틀 좌측 쏠림 해결 및 스크롤 고정 */
+#stockTable th {
+    text-align: center !important;
+    vertical-align: middle !important;
+    position: sticky !important;    /* 스크롤 내려도 그 자리에 고정 */
+    top: 0 !important;             /* 최상단에 딱 붙도록 설정 */
+    z-index: 10 !important;        /* 스크롤할 때 데이터 글자들이 헤더 위로 침범하지 못하게 방지 */
+    background-color: #f8f9fa !important; /* 고정되었을 때 뒤쪽 데이터가 비쳐 보이지 않도록 배경색 보장 */
+}
+
+  /* [2] 스마트폰/태블릿 모바일 화면(폭 768px 이하) 대응 마법의 구역 */
+@media screen and (max-width: 768px) {
+    
+    /* 전체 화면 여백 조절 */
+    .wrap {
+        padding: 8px !important;
+    }
+
+    /* 1. 계산기 레이아웃: 가로(좌/우) 배치를 무조건 세로(위/아래) 배치로 전환 */
+    .calc-layout {
+        grid-template-columns: 1fr !important; /* 420px 고정을 풀고 100% 꽉 차게 */
+        gap: 16px !important;
+    }
+
+    /* 2. 계산 조건 입력창 구역 최적화 */
+    .calc-form {
+        width: 100% !important;
+    }
+    
+    /* 3. 상단 계산조건 내부의 반반(1fr 1fr) 입력창 정렬 */
+    .form-grid-2 {
+        grid-template-columns: 1fr 1fr !important; /* 모바일에서도 반반 유지 혹은 필요시 1fr */
+        gap: 10px !important;
+    }
+
+    /* 4. 하단 계산 결과 카드가 모바일에서 3열로 찢어져 찌그러지는 현상 방지 */
+    .calc-result-grid {
+        grid-template-columns: 1fr !important; /* 결과 카드를 세로로 1줄씩 시원하게 나열 */
+        gap: 10px !important;
+    }
+
+    /* 5. 하단 최종 요약 리스트 좌우 폭 매칭 */
+    .summary-row {
+        grid-template-columns: 120px 1fr !important; /* 앞쪽 라벨 폭을 줄여 글자 잘림 방지 */
+        padding: 10px !important;
+        font-size: 12px !important;
+    }
+
+    /* 6. 모바일 터치 두께 확대 (입력창, 선택창 크기 보정) */
+    .calc-form select, 
+    input[type="text"], 
+    input[type="number"] {
+        height: 44px !important; /* 손가락으로 터치하기 편한 두께 */
+        font-size: 14px !important;
+    }
+    
+    /* 모바일 면적 입력창 폰트 미세 조절 */
+    .calc-area-input {
+        height: 64px !important;
+        font-size: 24px !important;
+    }
+}
+
+/* 툴팁 */
+.stock-tooltip {
+    position: absolute; display: none; background: rgba(0, 0, 0, 0.8); color: #fff;
+    padding: 8px 12px; border-radius: 5px; font-size: 13px; z-index: 9999;
+    pointer-events: none; line-height: 1.4;
+}
+
+/* ==========================================================================
+   단가표 화면 모바일(스마트폰) 가독성 극대화 스타일
+   ========================================================================== */
+@media screen and (max-width: 768px) {
+    
+    /* 1. 단가표 기본 레이아웃을 세로로 정렬 (좌측 검색/필터와 우측 표를 위아래로) */
+    .layout {
+        grid-template-columns: 1fr !important; /* PC의 1.3fr 1fr 구조를 깨고 100%로 */
+        gap: 14px !important;
+    }
+
+    /* 2. 상단바(검색창, 추가 버튼 구역) 배치 조절 */
+    .topbar, .product-add {
+        grid-template-columns: 1fr !important; /* 가로로 늘어서던 인풋창들을 세로로 정렬 */
+        gap: 8px !important;
+        width: 100% !important;
+    }
+
+    /* 3. 모바일 터치 편의를 위해 버튼 및 입력창 크기 확대 */
+    .product-add select, 
+    .product-add input[type="text"], 
+    .product-add button {
+        height: 44px !important; /* 손가락 터치하기 미스 안 나는 두께 */
+        font-size: 14px !important; /* 아이폰 줌인 현상 방지 */
+    }
+
+    /* 4. [중요] 단가표 테이블 내부 글자 쪼개짐/비틀림 방지 */
+    .tab-panel table th, 
+    .tab-panel table td {
+        padding: 8px 6px !important; /* 좁은 화면에 맞게 셀 여백 미세 조절 */
+        font-size: 12px !important;  /* 글자가 너무 커서 줄바꿈이 지저분하게 일어나는 것 방지 */
+        line-height: 1.3 !important;
+    }
+
+    /* 5. 텍스트가 절대 잘리지 않아야 하는 중요한 규격/이름 칸 안전장치 */
+    td.name, td.spec-left, td.spec-right {
+        white-space: nowrap !important; /* 줄바꿈되어 깨지지 않고 가로로 유지 */
+    }
+
+    /* 6. 모바일 복사 버튼이나 링크들이 있는 구역 정렬 */
+    .quick-copy-row {
+        grid-template-columns: repeat(3, 1fr) !important; /* 3열 유지하되 글자 크기 축소 */
+        gap: 6px !important;
+    }
+    .quick-copy-row button {
+        font-size: 11px !important;
+        padding: 0 4px !important;
+        min-height: 38px !important;
+    }
+
+    /* 7. 하단 액션 버튼 모바일에서 가득 차게 */
+    .right-actions-bottom {
+        justify-content: space-between !important;
+        width: 100% !important;
+    }
+    .right-actions-bottom button {
+        flex: 1 !important; /* 버튼들이 반반씩 이쁘게 나눠 가짐 */
+        min-height: 40px !important;
+        font-size: 13px !important;
+    }
+}
+
 </style>
 </head>
 <body>
+
+<div id="authOverlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f5f5f5; z-index: 99999; display: flex; align-items: center; justify-content: center; font-family: sans-serif; padding: 20px;">
+    <div style="background: #fff; padding: 24px; border-radius: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; max-width: 340px; width: 100%; box-sizing: border-box;">
+        <h2 style="margin: 0 0 10px; font-size: 20px; color: #111; font-weight: 700;">시스템 잠금</h2>
+        <p style="margin: 0 0 20px; font-size: 13px; color: #666;">프로그램을 이용하려면 비밀번호를 입력하세요.</p>
+        
+        <input type="password" id="authPassword" placeholder="비밀번호 입력" 
+               style="width: 100%; height: 44px; padding: 0 12px; font-size: 16px; border: 1px solid #ddd; border-radius: 12px; box-sizing: border-box; text-align: center; margin-bottom: 14px; -webkit-text-security: disc;">
+        
+        <button id="authBtn" style="width: 100%; height: 44px; background: #111; color: #fff; border: none; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer;">확인</button>
+        <p id="authError" style="margin: 10px 0 0; font-size: 12px; color: #d63031; display: none; font-weight: bold;">❌ 비밀번호가 올바르지 않습니다.</p>
+    </div>
+</div>
+
+<script>
+(function() {
+    // [핵심 수정] 사용자님 파일의 진짜 메인 박스인 .container를 찾아 숨깁니다.
+    const mainContainer = document.querySelector('.wrap');
+    if (mainContainer) {
+        mainContainer.style.display = 'none';
+    }
+
+    function checkPassword() {
+        const passwordInput = document.getElementById('authPassword').value;
+        const errorMsg = document.getElementById('authError');
+        const overlay = document.getElementById('authOverlay');
+
+        // 입력한 숫자가 '7736'인지 곧바로 확인합니다.
+        if (passwordInput === '7736') {
+            overlay.style.display = 'none';
+            if (mainContainer) {
+                mainContainer.style.display = 'block'; // 본 화면 활성화
+            }
+        } else {
+            errorMsg.style.display = 'block';
+            document.getElementById('authPassword').value = '';
+            document.getElementById('authPassword').focus();
+        }
+    }
+
+    // 버튼 클릭 및 엔터키 입력 이벤트 처리
+    document.getElementById('authBtn').addEventListener('click', checkPassword);
+    document.getElementById('authPassword').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            checkPassword();
+        }
+    });
+
+    /* ==========================================
+       🚫 기본적인 외부인 접근 제어 (우클릭 및 키 차단)
+       ========================================== */
+    document.addEventListener('contextmenu', e => e.preventDefault());
+
+    document.addEventListener('keydown', function(e) {
+        if (
+            e.key === 'F12' || 
+            (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) || 
+            (e.ctrlKey && e.key === 'U')
+        ) {
+            e.preventDefault();
+            return false;
+        }
+    });
+})();
+</script>
+  
 <div class="wrap">
   <div class="tabs no-capture">
-    <button type="button" class="tab-btn active" data-tab="pricingTab">단가표</button>
-    <button type="button" class="tab-btn" data-tab="calculatorTab">계산기</button>
-    <button type="button" class="tab-btn" data-tab="memoTab">메모장</button>
-    <button type="button" class="tab-btn" data-tab="stockTab">재고현황</button>
-  </div>
+  <button type="button" class="tab-btn active" data-tab="pricingTab">단가표</button>
+  <button type="button" class="tab-btn" data-tab="calculatorTab">계산기</button>
+  <button type="button" class="tab-btn" data-tab="memoTab">메모장</button>
+  <button type="button" class="tab-btn" data-tab="stockTab">재고현황</button>
+</div>
 
   <section id="pricingTab" class="tab-panel active">
     <div class="layout">
@@ -112,8 +319,8 @@
                 <th style="width:10%;">품번</th>
                 <th style="width:16%;">품명</th>
                 <th style="width:24%;">스펙</th>
-                <th style="width:12%;">소비자가(평)</th>
-                <th style="width:12%;">업체가(평)</th>
+                <th style="width:12%;">소비자가</th>
+                <th style="width:12%;">업체가</th>
                 <th style="width:13%;">자재 소비자가</th>
                 <th style="width:13%;">자재 업체가</th>
               </tr>
@@ -122,12 +329,14 @@
           </table>
         </div>
       </div>
-      <div style="display:grid;grid-template-rows:auto auto;gap:18px;">
+
+   <div style="display: grid; grid-template-rows: 1fr 1fr; gap: 14px; height: calc(100vh - 130px); max-height: calc(100vh - 130px);">
         <div class="card" id="captureArea">
           <div class="right-head">
             <h2 class="title" style="margin-bottom:0;">단가 안내</h2>
             <div class="quote-date" id="quoteDate">견적일 : -</div>
           </div>
+
           <div class="right-controls no-capture">
             <div class="check-row">
               <label class="check-chip"><input type="checkbox" id="sqmCheck" /> m² 단가</label>
@@ -142,12 +351,14 @@
               <option value="material">자재 별도</option>
             </select>
           </div>
-          <div class="scroll" style="max-height:420px;">
+
+          <div class="scroll" style="max-height:170px;">
             <table>
               <thead><tr id="rightHeaderRow"></tr></thead>
               <tbody id="rightTable"></tbody>
             </table>
           </div>
+
           <div class="notice">
             <ul>
               <li id="noticeLinePrimary">시공비 포함 (VAT 별도)</li>
@@ -155,12 +366,14 @@
               <li>평당 단순 단가이며, 실제 견적과 차이가 있을 수 있습니다.</li>
             </ul>
           </div>
+
           <div class="right-actions-bottom no-capture">
             <span class="pill" id="countText">선택 0 / 10</span>
             <button id="resetBtn" type="button" class="secondary">선택 초기화</button>
             <button id="saveBtn" type="button">저장하기</button>
           </div>
         </div>
+
         <div class="card desktop-only">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
             <h2 class="title" style="margin-bottom:0;">문자 / 카톡</h2>
@@ -174,8 +387,9 @@
             <div class="quick-preview-trigger"><button type="button" class="secondary js-copy-template" data-template="account">입금 계좌</button><div class="quick-preview" data-preview="account"></div></div>
             <div class="quick-preview-trigger"><button type="button" class="secondary js-copy-template" data-template="as">A/S 안내</button><div class="quick-preview" data-preview="as"></div></div>
             <div class="quick-preview-trigger"><button type="button" class="secondary js-copy-template" data-template="return">반품 안내</button><div class="quick-preview" data-preview="return"></div></div>
+
           </div>
-          <textarea id="copyText"></textarea>
+          <textarea id="copyText" style="width: 100%; height: 110px; resize: none; box-sizing: border-box;"></textarea>
         </div>
       </div>
     </div>
@@ -229,7 +443,7 @@
             </div>
             <div>
               <div class="calc-field-label">적용 방식</div>
-              <div class="calc-hint" style="margin-top:14px;">평/㎡ 입력 또는 박스 수 입력 시 로스율이 반영되어 정밀 수량이 도출됩니다.</div>
+              <div class="calc-hint" style="margin-top:14px;">평/㎡ 입력 시 필요 박스 수에 반영되고, 박스 수 입력 시에는 입력 박스 수에 로스율이 적용됩니다.</div>
             </div>
           </div>
           <div>
@@ -237,6 +451,7 @@
           </div>
         </div>
       </div>
+
       <div class="card">
         <h2 class="title">계산 결과</h2>
         <div class="calc-summary">
@@ -257,6 +472,7 @@
               <div class="result-sub" id="resultTotalVat">(VAT 포함가) -</div>
             </div>
           </div>
+
           <div class="summary-list">
             <div class="summary-row"><div class="summary-label">평당 단가</div><div id="summaryPy">-</div></div>
             <div class="summary-row"><div class="summary-label">㎡당 단가</div><div id="summarySqm">-</div></div>
@@ -265,10 +481,12 @@
             <div class="summary-row"><div class="summary-label">가격 기준</div><div id="summaryMode">-</div></div>
             <div class="summary-row"><div class="summary-label">로스율</div><div id="summaryLoss">-</div></div>
           </div>
+
           <div class="minor-meta">
             <div class="minor-meta-title">참고 정보</div>
             <div class="minor-meta-text"><span id="summaryProduct">-</span><br><span id="summarySpec">-</span><br><span id="summaryArea">-</span></div>
           </div>
+
           <div class="calc-notice" id="calcNotice">
             평수 또는 ㎡를 입력하면 필요한 박스 수와 총 금액이 자동 계산됩니다. 자재 별도 선택 시에는 자재 기준 단가로 계산됩니다.
           </div>
@@ -277,19 +495,90 @@
     </div>
   </section>
 
-  <section id="memoTab" class="tab-panel">
-    <div class="card">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+<section id="memoTab" class="tab-panel" style="display:none;">
+    <div class="card" style="display: flex; flex-direction: column; height: calc(100vh - 130px); max-height: calc(100vh - 130px); box-sizing: border-box;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-shrink: 0;">
         <h2 class="title" style="margin-bottom:0;">업무 메모</h2>
         <button type="button" id="clearMemo" style="background:#ff4d4d; color:white; border:none; border-radius:4px; padding:6px 12px; cursor:pointer; font-size:13px;">전체삭제</button>
       </div>
-      <textarea id="workMemo" spellcheck="false" style="width:100%; min-height:200px; padding:15px; border:1px solid #ddd; border-radius:8px; font-size:15px; line-height:1.6; resize:none; box-sizing:border-box; background:#fdfdfd; overflow:hidden;" placeholder="내용을 입력하면 높이가 자동으로 늘어납니다..."></textarea>
+      <textarea id="workMemo" spellcheck="false" style="width:100%; flex: 1; min-height: 200px; padding:15px; border:1px solid #ddd; border-radius:8px; font-size:15px; line-height:1.6; resize:none; box-sizing:border-box; background:#fdfdfd; overflow-y:auto;" placeholder="업무 내용을 자유롭게 입력하세요..."></textarea>
     </div>
-  </section>
 
-  <section id="stockTab" class="tab-panel">
-    <div class="card">
-        <h2 class="title">실시간 자재 재고 현황</h2>
+    <script>
+    (function() {
+        const memoArea = document.getElementById('workMemo');
+        if (!memoArea) return;
+
+        // 1. 최초 저장 데이터 로드
+        memoArea.value = localStorage.getItem('baram_work_memo') || '';
+
+        // 타이핑 시 글씨를 쓰고 있는 '줄'을 감지해서 항상 내 눈높이(모니터 중간)에 맞춰주는 특수 마법 함수
+        const keepEyesLevel = () => {
+            // 메모 탭이 숨겨져 있을 때는 스크롤 보정을 완전히 정지 (비밀번호 화면 등 튕김 차단)
+            const panel = document.getElementById('memoTab');
+            if (!panel || panel.style.display === 'none') return;
+
+            // 현재 사용자가 글자를 입력하고 있는 커서의 줄 위치 계산
+            const cursorPosition = memoArea.selectionStart;
+            const textUpToCursor = memoArea.value.substring(0, cursorPosition);
+            const currentLineNum = textUpToCursor.split('\n').length;
+            const totalLines = memoArea.value.split('\n').length;
+
+            // 줄바꿈이 일어났거나 긴 글 하단을 수정 중일 때
+            const lineHeight = 24; // 글자 크기 대비 1줄당 대략적인 높이(px)
+            const currentCursorTop = currentLineNum * lineHeight;
+            const memoVisibleHeight = memoArea.clientHeight;
+
+            // 커서가 입력창 내에서 현재 보여지는 스크롤 화면의 하단 구역(70% 지점)을 넘어가려고 하면
+            if (currentCursorTop > memoArea.scrollTop + (memoVisibleHeight * 0.7)) {
+                // 커서 줄이 메모창의 정중앙에 배치되도록 메모장 내부 스크롤을 실시간으로 슥 올려줍니다.
+                memoArea.scrollTop = currentCursorTop - (memoVisibleHeight / 2);
+            }
+        };
+
+        // 2. 글자 입력할 때마다 저장 및 눈높이 추적 실행
+        memoArea.addEventListener('input', () => {
+            localStorage.setItem('baram_work_memo', memoArea.value);
+            keepEyesLevel();
+        });
+
+        // 방향키 이동, 엔터, 지우기, 마우스 클릭 시에도 완벽하게 내 시선을 추적합니다.
+        memoArea.addEventListener('click', keepEyesLevel);
+        memoArea.addEventListener('keyup', (e) => {
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'Backspace'].includes(e.key)) {
+                keepEyesLevel();
+            }
+        });
+
+        // 3. 상단 탭 버튼 클릭하여 메모장 켜질 때 스크롤 초기 세팅
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                setTimeout(() => {
+                    if (btn.getAttribute('data-tab') === 'memoTab') {
+                        // 켜지는 순간 강제 아래 튕김을 막고 제일 마지막 작성 위치로 스크롤 이동
+                        memoArea.scrollTop = memoArea.scrollHeight;
+                    }
+                }, 50);
+            });
+        });
+
+        // 전체 삭제 기능 연동
+        const clearBtn = document.getElementById('clearMemo');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => {
+                if (confirm('메모장의 모든 내용을 정말로 삭제하시겠습니까?')) {
+                    memoArea.value = '';
+                    localStorage.removeItem('baram_work_memo');
+                }
+            });
+        }
+    })();
+    </script>
+</section>
+
+<section id="stockTab" class="tab-panel">
+    <div class="content-card">
+        <h2 class="card-title">실시간 자재 재고 현황</h2>
         <div class="stock-table-wrapper">
             <table id="stockTable">
                 <thead>
@@ -305,204 +594,246 @@
                 <tbody id="stockTableBody">
                     <tr>
                         <td colspan="6" style="text-align:center; padding:30px;">
-                            재고를 가져오고 있습니다...
+                            데이터를 불러오는 중입니다...
                         </td>
                     </tr>
                 </tbody>
             </table>
         </div>
     </div>
-  </section>
+</section>
+
+<!-- 호버 툴팁 엘리먼트 (탭 밖, body 하단에 두는 것이 좋음) -->
+<div id="stockTooltip" class="stock-tooltip"></div>
+
+
 </div>
 <div id="toast" class="toast">복사 완료</div>
-
 <script>
-// 전역 마스터 제품 데이터 객체 구조 (시트 로드 전 기본 백업셋)
-let products = [
-  { code: "BR-01", name: "바람 내추럴 오크", spec: "115 * 800 * 7.5T", sheets_per_box: 32, box_m2: 2.94, consumer: { py: 150000, sqm: 46296, box: 136110, material: 90000 }, vendor: { py: 120000, sqm: 37037, box: 108880, material: 70000 } }
-];
+// products 배열은 PRICE 시트에서 동적으로 로드됩니다.
+let products = [];
 
 const templates = {
-  sample: ['안녕하세요.', '지복득마루입니다.', '', '■ 요청 서류', '- 사업자 등록증 및 명함', '', '■ 샘플 안내', '- 쪽 샘플은 영업일 기준 1~3일 내 택배로 발송됩니다.', '- 수령지가 명함과 다른 경우 [성함, 주소, 연락처]를 남겨주세요.', '- 원하시는 [제품 번호]를 기재해 주시면 발송 도와드렸습니다.', '', '감사합니다.'].join('\n'),
-  price: ['안녕하세요.', '지복득마루입니다.', '', '■ 요청 사항', '- 사업자등록증 및 명함', '- 제품 번호 및 문의 사항', '', '위 내용을 보내주시면 확인 후', '신속히 안내 도와드리겠습니다.', '', '감사합니다.'].join('\n'),
-  vendor: ['안녕하세요.', '지복득마루입니다.', '', '■ 신규 업체 등록 안내', '원활한 업무 진행을 위해 아래 내용 전달 부탁드립니다.', '', '- 사업자등록증', '- 명함 또는 담당자 정보', '', '보내주신 내용 확인 후', '신속히 안내 도와드리겠습니다.', '', '감사합니다.'].join('\n'),
-  reserve: ['안녕하세요.', '지복득마루입니다.', '', '■ 전시장 방문 예약 안내', 'A래 링크를 통해 예약 확인 부탁드립니다.', '', '▶ 예약 링크 바로가기', 'http://www.jibokdeukmaru.com/reserve', '', '감사합니다.'].join('\n'),
-  account: ['안녕하세요.', '지복득마루입니다.', '', '■ 입금 계좌 안내', '아래 계좌 정보 확인 부탁드립니다.', '', '▶ 신한은행', '▶ 140-013-942370', '▶ 예금주: ㈜지복득마루', '', '감사합니다.'].join('\n'),
-  as: ['안녕하세요.', '지복득마루입니다.', '', '■ A/S 접수 안내', '원활한 상담을 위해 아래 내용을 함께 전달 부탁드립니다.', '', '- 시공 일자', '- 현장 주소', '- 하자 및 불편 내용', '- 사진 또는 영상', '', '내용 확인 후 담당자를 배정하여', '신속하게 안내드리겠습니다.', '', '감사합니다.'].join('\n'),
-  return: ['안녕하세요.', '지복득마루입니다.', '', '■ 자재 반품 주소 안내', '아래 주소로 자재 발송(선불) 부탁드립니다.', '', '▶ 주소: 경기도 하남시 감북동 119-1', '▶ 담당: 이장원 팀장 (010-9780-9236)', '', '자재 확인 후', '반품 정산 도와드리겠습니다.', '', '감사합니다.'].join('\n')
+  sample: [
+  '안녕하세요.',
+  '지복득마루입니다.',
+  '',
+  '■ 요청 서류',
+  '- 사업자 등록증 및 명함',
+  '',
+  '■ 샘플 안내',
+  '- 쪽 샘플은 영업일 기준 1~3일 내 택배로 발송됩니다.',
+  '- 수령지가 명함과 다른 경우 [성함, 주소, 연락처]를 남겨주세요.',
+  '- 원하시는 [제품 번호]를 기재해 주시면 발송 도와드리겠습니다.',
+  '',
+  '감사합니다.'
+].join('\n'),
+  price: [
+  '안녕하세요.',
+  '지복득마루입니다.',
+  '',
+  '■ 요청 사항',
+  '- 사업자등록증 및 명함',
+  '- 제품 번호 및 문의 사항',
+  '',
+  '위 내용을 보내주시면 확인 후',
+  '신속히 안내 도와드리겠습니다.',
+  '',
+  '감사합니다.'
+].join('\n'),
+  vendor: [
+  '안녕하세요.',
+  '지복득마루입니다.',
+  '',
+  '■ 신규 업체 등록 안내',
+  '원활한 업무 진행을 위해 아래 내용 전달 부탁드립니다.',
+  '',
+  '- 사업자등록증',
+  '- 명함 또는 담당자 정보',
+  '',
+  '보내주신 내용 확인 후',
+  '신속히 안내 도와드리겠습니다.',
+  '',
+  '감사합니다.'
+].join('\n'),
+  reserve: [
+  '안녕하세요.',
+  '지복득마루입니다.',
+  '',
+  '■ 전시장 방문 예약 안내',
+  '아래 링크를 통해 예약 확인 부탁드립니다.',
+  '',
+  '▶ 예약 링크 바로가기',
+  'http://www.jibokdeukmaru.com/reserve',
+  '',
+  '감사합니다.'
+].join('\n'),
+  account: [
+  '안녕하세요.',
+  '지복득마루입니다.',
+  '',
+  '■ 입금 계좌 안내',
+  '아래 계좌 정보 확인 부탁드립니다.',
+  '',
+  '▶ 신한은행',
+  '▶ 140-013-942370',
+  '▶ 예금주: ㈜지복득마루',
+  '',
+  '감사합니다.'
+].join('\n'),
+  as: [
+  '안녕하세요.',
+  '지복득마루입니다.',
+  '',
+  '■ A/S 접수 안내',
+  '원활한 상담을 위해 아래 내용을 함께 전달 부탁드립니다.',
+  '',
+  '- 시공 일자',
+  '- 현장 주소',
+  '- 하자 및 불편 내용',
+  '- 사진 또는 영상',
+  '',
+  '내용 확인 후 담당자를 배정하여',
+  '신속하게 안내드리겠습니다.',
+  '',
+  '감사합니다.'
+].join('\n'),
+return: [
+  '안녕하세요.',
+  '지복득마루입니다.',
+  '',
+  '■ 자재 반품 주소 안내',
+  '아래 주소로 자재 발송(선불) 부탁드립니다.',
+  '',
+  '▶ 주소: 경기도 하남시 감북동 119-1',
+  '▶ 담당: 이장원 팀장 (010-9780-9236)',
+  '',
+  '자재 확인 후',
+  '반품 정산 도와드리겠습니다.',
+  '',
+  '감사합니다.'
+].join('\n')
 };
-
-const state = { selected: [], audience: 'both', priceMode: 'included', maxSelected: 10, box: false, sqm: false };
+const state = { selected: [], audience: 'consumer', priceMode: 'included', maxSelected: 10, box: false, sqm: false };
 const $ = (id) => document.getElementById(id);
 const fmt = (n) => (Number.isFinite(n) ? `${n.toLocaleString('ko-KR')}원` : '-');
-
 let toastTimer = null;
-function showToast(message = '복사 완료') { 
-  const t = $('toast'); if (!t) return; t.textContent = message; t.classList.add('show'); 
-  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 1400); 
-}
-
-async function copyToClipboard(text) { 
-  try { await navigator.clipboard.writeText(text); showToast('복사 완료'); } 
-  catch (e) {
-    const temp = document.createElement('textarea'); temp.value = text; temp.style.position = 'fixed'; temp.style.left = '-9999px';
-    document.body.appendChild(temp); temp.select(); document.execCommand('copy'); document.body.removeChild(temp); showToast('복사 완료');
-  } 
-}
-
+function showToast(message='복사 완료') { const t=$('toast'); if(!t) return; t.textContent=message; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),1400); }
+async function copyToClipboard(text) { try { await navigator.clipboard.writeText(text); showToast('복사 완료'); } catch (e) { const temp=document.createElement('textarea'); temp.value=text; temp.style.position='fixed'; temp.style.left='-9999px'; document.body.appendChild(temp); temp.select(); document.execCommand('copy'); document.body.removeChild(temp); showToast('복사 완료'); } }
 function roundTo(value, base) { return Math.round(value / base) * base; }
 function ceilTo(value, base) { return Math.ceil(value / base) * base; }
-function formatDecimal(value) {
-  const num = Number(value); if (!Number.isFinite(num)) return '-';
-  const rounded = Math.round(num * 100) / 100;
-  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(2).replace(/\.00$/, '');
-}
-function formatArea(py, sqm) { return `${py.toFixed(2)}평 / ${sqm.toFixed(2)}㎡`; }
-function calcVatIncluded(amount) { return Math.round(amount * 1.1); }
-
-function formatQuoteDate(dateObj = new Date()) { 
-  const y = dateObj.getFullYear(); const m = String(dateObj.getMonth() + 1).padStart(2, '0'); const d = String(dateObj.getDate()).padStart(2, '0'); 
-  return `견적일 : ${y}-${m}-${d}`; 
-}
-function updateQuoteDate(dateObj = new Date()) { const el = $('quoteDate'); if (el) el.textContent = formatQuoteDate(dateObj); }
-
-function getUnitValue(product, party, unit, priceMode = state.priceMode) {
+function formatQuoteDate(dateObj = new Date()) { const y = dateObj.getFullYear(); const m = String(dateObj.getMonth() + 1).padStart(2,'0'); const d = String(dateObj.getDate()).padStart(2,'0'); return `견적일 : ${y}-${m}-${d}`; }
+function updateQuoteDate(dateObj = new Date()) { const el = $('quoteDate'); if(el) el.textContent = formatQuoteDate(dateObj); }
+function getUnitValue(product, party, unit, priceMode=state.priceMode) {
   if (unit === 'py') return priceMode === 'material' ? product[party].material : product[party].py;
   if (unit === 'sqm') return priceMode === 'material' ? ceilTo(product[party].material / 3.24, 100) : product[party].sqm;
   if (unit === 'box') return product[party].box;
   return product[party][unit];
 }
 function modeText() { return state.priceMode === 'material' ? '자재 금액 (VAT 별도)' : '시공비 포함 (VAT 별도)'; }
-
 function fillSelect() {
-  const leftSel = $('productSelect'); const calcSel = $('calcProductSelect');
-  [leftSel, calcSel].forEach(sel => { if (sel) sel.innerHTML = ''; });
-  const frag1 = document.createDocumentFragment(); const frag2 = document.createDocumentFragment();
-  products.forEach(p => {
-    const text = `${p.code} (${p.name})`;
-    const opt1 = document.createElement('option'); opt1.value = p.code; opt1.textContent = text; frag1.appendChild(opt1);
-    const opt2 = document.createElement('option'); opt2.value = p.code; opt2.textContent = text; frag2.appendChild(opt2);
+  const leftSel=$('productSelect');
+  const calcSel=$('calcProductSelect');
+  [leftSel, calcSel].forEach(sel=>{ if(sel) sel.innerHTML=''; });
+  const frag1=document.createDocumentFragment();
+  const frag2=document.createDocumentFragment();
+  products.forEach(p=>{
+    const text=`${p.code} (${p.name})`;
+    const opt1=document.createElement('option'); opt1.value=p.code; opt1.textContent=text; frag1.appendChild(opt1);
+    const opt2=document.createElement('option'); opt2.value=p.code; opt2.textContent=text; frag2.appendChild(opt2);
   });
-  if (leftSel) leftSel.appendChild(frag1); if (calcSel) calcSel.appendChild(frag2);
+  if(leftSel) leftSel.appendChild(frag1);
+  if(calcSel) calcSel.appendChild(frag2);
 }
-
-function renderLeftTable() { 
-  const table = $('leftTable'); if (!table) return; 
-  const q = ($('searchInput')?.value || '').trim().toLowerCase(); table.innerHTML = ''; 
-  const frag = document.createDocumentFragment(); 
-  products.forEach(p => { 
-    const hay = `${p.code} ${p.name} ${p.spec}`.toLowerCase(); if (q && !hay.includes(q)) return; 
-    const tr = document.createElement('tr'); 
-    tr.innerHTML = `<td>${p.code}</td><td class="name">${p.name}</td><td class="spec-left">${p.spec}</td><td>${fmt(p.consumer.py)}</td><td>${fmt(p.vendor.py)}</td><td>${fmt(p.consumer.material)}</td><td>${fmt(p.vendor.material)}</td>`; 
-    tr.addEventListener('dblclick', () => addCode(p.code)); frag.appendChild(tr); 
-  }); 
-  table.appendChild(frag); 
-}
-
-function buildRightHeader() { 
-  const row = $('rightHeaderRow'); if (!row) return; const cols = []; 
-  cols.push('<th style="width:14%;">품번</th><th style="width:26%;">스펙</th>'); 
-  if (state.audience === 'both') { cols.push('<th style="width:13%;">소비자가(평)</th><th style="width:13%;">업체가(평)</th>'); } 
-  else { cols.push('<th style="width:16%;">가격(평)</th>'); } 
-  if (state.box) cols.push('<th style="width:18%;">박스당 단가</th>'); if (state.sqm) cols.push('<th style="width:12%;">m² 단가</th>'); 
-  row.innerHTML = cols.join(''); 
-}
-
-function boxMeta(partyProduct, party) { 
-  const amount = fmt(getUnitValue(partyProduct, party, 'box')); 
-  return `<div>${amount}</div><div class="muted meta-box">${partyProduct.box_m2}장 / ${partyProduct.sheets_per_box}㎡</div>`; 
-}
-
-function renderRightTable() { 
-  const table = $('rightTable'); if (!table) return; table.innerHTML = ''; 
-  const frag = document.createDocumentFragment(); const showCompany = state.audience === 'both'; 
-  state.selected.forEach(code => { 
-    const p = products.find(x => x.code === code); if (!p) return; 
-    const tr = document.createElement('tr'); const cells = []; 
-    cells.push(`<td>${p.code}</td><td class="spec-right">${p.spec}</td>`); 
-    if (showCompany) { cells.push(`<td>${fmt(getUnitValue(p, 'consumer', 'py'))}</td><td>${fmt(getUnitValue(p, 'vendor', 'py'))}</td>`); } 
-    else { cells.push(`<td>${fmt(getUnitValue(p, 'consumer', 'py'))}</td>`); } 
-    if (state.box) { cells.push(`<td>${boxMeta(p, state.audience === 'consumer' ? 'consumer' : 'vendor')}</td>`); } 
-    if (state.sqm) { cells.push(`<td>${fmt(getUnitValue(p, state.audience === 'consumer' ? 'consumer' : 'vendor', 'sqm'))}</td>`); } 
-    tr.innerHTML = cells.join(''); tr.addEventListener('dblclick', () => removeCode(p.code)); frag.appendChild(tr); 
-  }); 
-  table.appendChild(frag); 
-}
-
-function buildGuideText() { 
-  const lines = ['안녕하세요.', '단가 안내드립니다.', '']; 
-  state.selected.forEach(code => { 
-    const p = products.find(x => x.code === code); if (!p) return; 
-    lines.push(`품번 : ${p.code}`); lines.push(`스펙 : ${p.spec}`); 
-    if (state.audience === 'both') { lines.push(`소비자가 : ${fmt(getUnitValue(p, 'consumer', 'py'))}`); lines.push(`업체가 : ${fmt(getUnitValue(p, 'vendor', 'py'))}`); } 
-    else { lines.push(`가격 : ${fmt(getUnitValue(p, 'consumer', 'py'))}`); } 
-    if (state.box) { lines.push(`박스당 단가 : ${fmt(getUnitValue(p, state.audience === 'consumer' ? 'consumer' : 'vendor', 'box'))} (${p.box_m2}장 / ${p.sheets_per_box}㎡)`); } 
-    if (state.sqm) { lines.push(`m² 단가 : ${fmt(getUnitValue(p, state.audience === 'consumer' ? 'consumer' : 'vendor', 'sqm'))}`); } 
-    lines.push(''); 
-  }); 
-  lines.push(`■ ${modeText()}`); 
-  if (state.priceMode === 'material') { lines.push('■ 운임비 별도'); } else { lines.push('■ 공과잡비 별도 (운임비, 양중비 등)'); } 
-  lines.push('■ 평당 단순 단가이며, 실제 견적과 차이가 있을 수 있습니다.'); return lines.join('\n'); 
-}
-
-function renderMeta() { 
-  updateQuoteDate(); $('noticeLinePrimary').textContent = modeText(); 
-  $('noticeLineSecondary').textContent = state.priceMode === 'material' ? '운임비 별도' : '공과잡비 별도 (운임비, 양중비 등)'; 
-  $('countText').textContent = `선택 ${state.selected.length} / ${state.maxSelected}`; 
-  $('audienceSelect').value = state.audience; $('priceModeSelect').value = state.priceMode; 
-  $('boxCheck').checked = !!state.box; $('sqmCheck').checked = !!state.sqm; 
-  const ta = $('copyText'); if (ta) ta.value = buildGuideText(); 
-}
-
+function renderLeftTable() { const table=$('leftTable'); if(!table) return; const q=($('searchInput')?.value || '').trim().toLowerCase(); table.innerHTML=''; const frag=document.createDocumentFragment(); products.forEach(p=>{ const hay=`${p.code} ${p.name} ${p.spec}`.toLowerCase(); if(q && !hay.includes(q)) return; const tr=document.createElement('tr'); tr.innerHTML=`<td>${p.code}</td><td class="name">${p.name}</td><td class="spec-left">${p.spec}</td><td>${fmt(p.consumer.py)}</td><td>${fmt(p.vendor.py)}</td><td>${fmt(p.consumer.material)}</td><td>${fmt(p.vendor.material)}</td>`; tr.addEventListener('dblclick',()=>addCode(p.code)); frag.appendChild(tr); }); table.appendChild(frag); }
+function buildRightHeader() { const row=$('rightHeaderRow'); if(!row) return; const cols=[]; cols.push('<th style="width:14%;">품번</th>'); cols.push('<th style="width:26%;">스펙</th>'); if (state.audience === 'both') { cols.push('<th style="width:13%;">소비자가(평)</th>'); cols.push('<th style="width:13%;">업체가(평)</th>'); } else { cols.push('<th style="width:16%;">가격(평)</th>'); } if (state.box) cols.push('<th style="width:18%;">박스당 단가</th>'); if (state.sqm) cols.push('<th style="width:12%;">m² 단가</th>'); row.innerHTML=cols.join(''); }
+function boxMeta(partyProduct, party) { const amount = fmt(getUnitValue(partyProduct, party, 'box')); return `<div>${amount}</div><div class="muted meta-box">${partyProduct.sheets_per_box}장 / ${partyProduct.box_m2}㎡</div>`; }
+function renderRightTable() { const table=$('rightTable'); if(!table) return; table.innerHTML=''; const frag=document.createDocumentFragment(); const showCompany = state.audience === 'both'; state.selected.forEach(code=>{ const p=products.find(x=>x.code===code); if(!p) return; const tr=document.createElement('tr'); const cells=[]; cells.push(`<td>${p.code}</td>`); cells.push(`<td class="spec-right">${p.spec}</td>`); if (showCompany) { cells.push(`<td>${fmt(getUnitValue(p,'consumer','py'))}</td>`); cells.push(`<td>${fmt(getUnitValue(p,'vendor','py'))}</td>`); } else { cells.push(`<td>${fmt(getUnitValue(p,'consumer','py'))}</td>`); } if (state.box) { cells.push(`<td>${boxMeta(p, state.audience === 'consumer' ? 'consumer' : 'vendor')}</td>`); } if (state.sqm) { cells.push(`<td>${fmt(getUnitValue(p, state.audience === 'consumer' ? 'consumer' : 'vendor', 'sqm'))}</td>`); } tr.innerHTML=cells.join(''); tr.addEventListener('dblclick',()=>removeCode(p.code)); frag.appendChild(tr); }); table.appendChild(frag); }
+function buildGuideText() { const lines=['안녕하세요.','단가 안내드립니다.','']; state.selected.forEach(code=>{ const p=products.find(x=>x.code===code); if(!p) return; lines.push(`품번 : ${p.code}`); lines.push(`스펙 : ${p.spec}`); if (state.audience === 'both') { lines.push(`소비자가 : ${fmt(getUnitValue(p,'consumer','py'))}`); lines.push(`업체가 : ${fmt(getUnitValue(p,'vendor','py'))}`); } else { lines.push(`가격 : ${fmt(getUnitValue(p,'consumer','py'))}`); } if (state.box) { lines.push(`박스당 단가 : ${fmt(getUnitValue(p, state.audience === 'consumer' ? 'consumer' : 'vendor', 'box'))} (${p.sheets_per_box}장 / ${p.box_m2}㎡)`); } if (state.sqm) { lines.push(`m² 단가 : ${fmt(getUnitValue(p, state.audience === 'consumer' ? 'consumer' : 'vendor', 'sqm'))}`); } lines.push(''); }); lines.push(`■ ${modeText()}`); if (state.priceMode === 'material') { lines.push('■ 운임비 별도'); } else { lines.push('■ 공과잡비 별도 (운임비, 양중비 등)'); } lines.push('■ 평당 단순 단가이며, 실제 견적과 차이가 있을 수 있습니다.'); return lines.join('\n'); }
+function renderMeta() { updateQuoteDate(); $('noticeLinePrimary').textContent = modeText(); $('noticeLineSecondary').textContent = state.priceMode === 'material' ? '운임비 별도' : '공과잡비 별도 (운임비, 양중비 등)'; $('countText').textContent = `선택 ${state.selected.length} / ${state.maxSelected}`; $('audienceSelect').value = state.audience; $('priceModeSelect').value = state.priceMode; $('boxCheck').checked = !!state.box; $('sqmCheck').checked = !!state.sqm; const ta=$('copyText'); if(ta) ta.value = buildGuideText(); }
 function renderAll() { renderLeftTable(); buildRightHeader(); renderRightTable(); renderMeta(); }
-function addCode(code) { 
-  if (!code || state.selected.includes(code)) return; 
-  if (state.selected.length >= state.maxSelected) { return showToast(`선택은 최대 ${state.maxSelected}개까지만 가능합니다.`); }
-  state.selected.push(code); renderAll(); 
-}
-function removeCode(code) { state.selected = state.selected.filter(x => x !== code); renderAll(); }
-function resetAll() { state.selected = []; renderAll(); }
+function addCode(code) { if(!code || state.selected.includes(code)) return; if(state.selected.length >= state.maxSelected) return showToast(`선택은 최대 ${state.maxSelected}개까지만 가능합니다.`); state.selected.push(code); renderAll(); }
+function removeCode(code) { state.selected = state.selected.filter(x=>x!==code); renderAll(); }
+function resetAll() { state.selected=[]; renderAll(); }
+async function saveCapture() { const el=$('captureArea'); if(!el) return; const captureNow = new Date(); updateQuoteDate(captureNow); const scrollers=el.querySelectorAll('.scroll'); const prev=[]; el.classList.add('is-capturing'); scrollers.forEach(node=>{ prev.push([node,node.style.overflow,node.style.maxHeight]); node.style.overflow='visible'; node.style.maxHeight='none'; }); try { const canvas=await html2canvas(el,{backgroundColor:'#ffffff',scale:2,useCORS:true,logging:false}); const now=new Date(); const stamp=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`; const a=document.createElement('a'); a.href=canvas.toDataURL('image/png'); a.download=`단가안내_${stamp}.png`; a.click(); } finally { prev.forEach(([node,overflow,maxHeight])=>{ node.style.overflow=overflow; node.style.maxHeight=maxHeight; }); el.classList.remove('is-capturing'); } }
+function initPreviews() { document.querySelectorAll('[data-preview]').forEach(node=>{ node.textContent = templates[node.dataset.preview] || ''; }); }
+function setTab(tabId) {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tabId);
+  });
 
-async function saveCapture() { 
-  const el = $('captureArea'); if (!el) return; const captureNow = new Date(); updateQuoteDate(captureNow); 
-  const scrollers = el.querySelectorAll('.scroll'); const prev = []; el.classList.add('is-capturing'); 
-  scrollers.forEach(node => { prev.push([node, node.style.overflow, node.style.maxHeight]); node.style.overflow = 'visible'; node.style.maxHeight = 'none'; }); 
-  try { 
-    const canvas = await html2canvas(el, { backgroundColor: '#ffffff', scale: 2, useCORS: true, logging: false }); const now = new Date(); 
-    const stamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`; 
-    const a = document.createElement('a'); a.href = canvas.toDataURL('image/png'); a.download = `단가안내_${stamp}.png`; a.click(); 
-  } finally { prev.forEach(([node, overflow, maxHeight]) => { node.style.overflow = overflow; node.style.maxHeight = maxHeight; }); el.classList.remove('is-capturing'); } 
-}
-function initPreviews() { document.querySelectorAll('[data-preview]').forEach(node => { node.textContent = templates[node.dataset.preview] || ''; }); }
 
-function syncCalcInputUi() { 
-  const mode = $('calcInputModeSelect')?.value || 'py'; const label = $('calcInputLabel'); const input = $('calcAreaInput'); if (!label || !input) return; 
-  if (mode === 'py') { label.textContent = '평수 입력'; input.placeholder = '예: 25'; input.step = '0.01'; } 
-  else if (mode === 'sqm') { label.textContent = '㎡ 입력'; input.placeholder = '예: 81'; input.step = '0.01'; } 
-  else { label.textContent = '박스 수 입력'; input.placeholder = '예: 10'; input.step = '1'; } 
+// 업무 메모장 입력 시 화면 튕김(최하단 고정) 방지 및 자동 높이 조절
+const memoArea = document.getElementById('workMemo');
+if (memoArea) {
+    // 1. 최초 로드 시 저장된 메모 불러오기
+    memoArea.value = localStorage.getItem('baram_work_memo') || '';
+    
+    // 내용에 맞게 높이를 조절하되, 스크롤이 튕기지 않도록 보정하는 함수
+    const autoResizeMemo = () => {
+        // 현재 사용자가 보고 있는 브라우저의 스크롤 위치를 기억합니다.
+        const scrollX = window.scrollX;
+        const scrollY = window.scrollY;
+
+        memoArea.style.height = 'auto';
+        // 최소 높이를 250px로 보장하고 콘텐츠 길이에 맞춰 늘어납니다.
+        memoArea.style.height = Math.max(250, memoArea.scrollHeight) + 'px';
+
+        // 높이가 재계산된 직후, 기억해 둔 원래 스크롤 위치로 화면을 강제 고정합니다.
+        window.scrollTo(scrollX, scrollY);
+    };
+
+    // 2. 글자 타이핑할 때마다 실행
+    memoArea.addEventListener('input', () => {
+        localStorage.setItem('baram_work_memo', memoArea.value);
+        autoResizeMemo();
+    });
+
+    // 3. 메모장 탭을 클릭해서 활성화할 때도 높이를 한 번 맞춰줍니다.
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (btn.getAttribute('data-tab') === 'memoTab') {
+                setTimeout(autoResizeMemo, 50);
+            }
+        });
+    });
+}
+  
+
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if(btn.dataset.tab === 'memoTab') {
+        setTimeout(() => autoResize(memoArea), 10);
+      }
+    });
+  });
+  document.querySelectorAll('.tab-panel').forEach(panel => {
+    panel.style.display = panel.id === tabId ? 'block' : 'none';
+  });
 }
 
-function resetCalcResults() { 
-  const ids = ['resultAreaText', 'resultAreaSub', 'resultBoxes', 'resultBoxesSub', 'resultTotal', 'resultTotalVat', 'summaryProduct', 'summarySpec', 'summaryPy', 'summarySqm', 'summaryBox', 'summaryBoxMeta', 'summaryArea', 'summaryMode', 'summaryLoss'];
-  ids.forEach(id => { const el = $(id); if (el) { el.textContent = id === 'resultTotalVat' ? '(VAT 포함가) -' : '-'; } }); 
-  $('calcNotice').textContent = '평수 또는 ㎡를 입력하면 필요한 박스 수와 총 금액이 자동 계산됩니다. 자재 별도 선택 시에는 자재 기준 단가로 계산됩니다.'; 
+function formatDecimal(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return '-';
+  const rounded = Math.round(num * 100) / 100;
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(2).replace(/\.00$/, '');
 }
+function formatArea(py, sqm) { return `${py.toFixed(2)}평 / ${sqm.toFixed(2)}㎡`; }
+function calcVatIncluded(amount) { return Math.round(amount * 1.1); }
+function syncCalcInputUi() { const mode=$('calcInputModeSelect')?.value || 'py'; const label=$('calcInputLabel'); const input=$('calcAreaInput'); if(!label || !input) return; if(mode==='py'){ label.textContent='평수 입력'; input.placeholder='예: 25'; input.step='0.01'; } else if(mode==='sqm'){ label.textContent='㎡ 입력'; input.placeholder='예: 81'; input.step='0.01'; } else { label.textContent='박스 수 입력'; input.placeholder='예: 10'; input.step='1'; } }
+function resetCalcResults() { ['resultAreaText','resultAreaSub','resultBoxes','resultBoxesSub','resultTotal','resultTotalVat','summaryProduct','summarySpec','summaryPy','summarySqm','summaryBox','summaryBoxMeta','summaryArea','summaryMode','summaryLoss'].forEach(id=>{ const el=$(id); if(el) el.textContent = id==='resultTotalVat' ? '(VAT 포함가) -' : '-'; }); $('calcNotice').textContent='평수, ㎡, 박스 수를 입력하면 결과가 자동으로 계산됩니다. 자재 별도 선택 시에는 박스당 단가 기준으로 계산됩니다.'; }
 
-/* ==========================================================================
-   [수식 보존] 원본 수식 가동 계산기 엔진
-   ========================================================================== */
 function runCalculator() {
   const code = $('calcProductSelect').value;
   const party = $('calcAudienceSelect').value;
   const priceMode = $('calcPriceModeSelect').value;
   const inputMode = $('calcInputModeSelect').value;
   const raw = Number(($('calcAreaInput').value || '').trim());
-  
   const lossRateRaw = Number(($('calcLossRateInput')?.value || '').trim());
   const lossRate = Number.isFinite(lossRateRaw) && lossRateRaw > 0 ? lossRateRaw : 0;
   const lossMultiplier = 1 + (lossRate / 100);
-  
   const p = products.find(x => x.code === code);
+
   if (!p) { resetCalcResults(); return; }
 
   if (!Number.isFinite(raw) || raw <= 0) {
@@ -512,7 +843,7 @@ function runCalculator() {
     $('summaryPy').textContent = fmt(getUnitValue(p, party, 'py', priceMode));
     $('summarySqm').textContent = fmt(getUnitValue(p, party, 'sqm', priceMode));
     $('summaryBox').textContent = fmt(getUnitValue(p, party, 'box', priceMode));
-    $('summaryBoxMeta').textContent = `${p.box_m2}장 / ${p.sheets_per_box}㎡`;
+    $('summaryBoxMeta').textContent = `${p.sheets_per_box}장 / ${p.box_m2}㎡`;
     $('summaryMode').textContent = `${party === 'consumer' ? '소비자가' : '업체가'} / ${priceMode === 'material' ? '자재 별도' : '시공비 포함'}`;
     $('summaryLoss').textContent = lossRate ? `${formatDecimal(lossRate)}%` : '0%';
     $('summaryArea').textContent = '입력 전';
@@ -521,8 +852,9 @@ function runCalculator() {
 
   const PY_FACTOR = 3.24;
   let inputPy, inputSqm, inputBoxes;
-  let calcBoxes;
+  let calcPy, calcSqm, calcBoxes;
 
+  // 1. 입력 모드에 따른 기본 면적 계산
   if (inputMode === 'py') {
     inputPy = raw;
     inputSqm = raw * PY_FACTOR;
@@ -531,29 +863,30 @@ function runCalculator() {
     inputPy = raw / PY_FACTOR;
   } else {
     inputBoxes = Math.ceil(raw);
-    inputSqm = inputBoxes * p.sheets_per_box;
+    inputSqm = inputBoxes * p.box_m2;
     inputPy = inputSqm / PY_FACTOR;
   }
 
-  if (inputMode === 'box') {
-    calcBoxes = Math.ceil(raw * lossMultiplier);
-  } else {
-    const targetSqmWithLoss = inputSqm * lossMultiplier;
-    calcBoxes = Math.ceil(targetSqmWithLoss / p.sheets_per_box);
-  }
+  // 2. 로스율 적용 및 최종 필요한 '박스 수' 결정 (정수 올림)
+  const targetSqmWithLoss = inputSqm * lossMultiplier;
+  calcBoxes = Math.ceil(targetSqmWithLoss / p.box_m2);
   
-  const finalCoverageSqm = calcBoxes * p.sheets_per_box;
+  // 3. 핵심: 정수로 맞춰진 박스 수량이 실제로 커버하는 면적 계산
+  const finalCoverageSqm = calcBoxes * p.box_m2;
   const finalCoveragePy = finalCoverageSqm / PY_FACTOR;
 
   const pyPrice = getUnitValue(p, party, 'py', priceMode);
   const sqmPrice = getUnitValue(p, party, 'sqm', priceMode);
   const boxPrice = getUnitValue(p, party, 'box', priceMode);
 
+  // 4. 금액 계산: 박스로 환산된 면적(finalCoverageSqm)에 헤베 단가를 곱함
   let total;
   if (inputMode === 'py') {
-    total = Math.round(finalCoveragePy * pyPrice); 
+    // 평수 입력 시에도 최종 박스 면적 기준 평당가 적용
+    total = Math.round((Math.round(finalCoveragePy * 100) * pyPrice) / 100);
   } else if (inputMode === 'sqm') {
-    total = Math.round(finalCoverageSqm * sqmPrice); 
+    // ㎡ 입력 시 최종 박스 면적 기준 헤베 단가 적용
+  total = Math.round((Math.round(finalCoverageSqm * 100) * sqmPrice) / 100);
   } else {
     total = calcBoxes * boxPrice;
   }
@@ -561,10 +894,11 @@ function runCalculator() {
   const totalVat = calcVatIncluded(total);
   const priceLabel = `${party === 'consumer' ? '소비자가' : '업체가'} / ${priceMode === 'material' ? '자재 별도' : '시공비 포함'}`;
 
+  // UI 출력 업데이트
   $('resultAreaText').textContent = inputMode === 'py' ? `${raw}평` : inputMode === 'sqm' ? `${raw}㎡` : `${inputBoxes}박스`;
   $('resultAreaSub').textContent = inputMode === 'py' ? `(${formatDecimal(inputSqm)}㎡)` : inputMode === 'sqm' ? `(${formatDecimal(inputPy)}평)` : `(${formatDecimal(inputSqm)}㎡)`;
   $('resultBoxes').textContent = `${calcBoxes}박스`;
-  $('resultBoxesSub').textContent = `(${formatDecimal(finalCoverageSqm)}㎡)`; 
+  $('resultBoxesSub').textContent = `(${formatDecimal(finalCoverageSqm)}㎡)`; // 박스가 커버하는 실제 면적
   $('resultTotal').textContent = fmt(total);
   $('resultTotalVat').textContent = `(VAT 포함가) ${fmt(totalVat)}`;
   $('summaryProduct').textContent = `${p.code} / ${p.name}`;
@@ -572,179 +906,304 @@ function runCalculator() {
   $('summaryPy').textContent = fmt(pyPrice);
   $('summarySqm').textContent = fmt(sqmPrice);
   $('summaryBox').textContent = fmt(boxPrice);
-  $('summaryBoxMeta').textContent = `${p.box_m2}장 / ${p.sheets_per_box}㎡`;
+  $('summaryBoxMeta').textContent = `${p.sheets_per_box}장 / ${p.box_m2}㎡`;
   $('summaryArea').textContent = `박스 환산 면적 ${formatArea(finalCoveragePy, finalCoverageSqm)}`;
   $('summaryMode').textContent = priceLabel;
   $('summaryLoss').textContent = lossRate ? `${formatDecimal(lossRate)}%` : '0%';
   $('calcNotice').textContent = `필요 수량 ${calcBoxes}박스에 맞춰 면적을 ${formatDecimal(finalCoverageSqm)}㎡로 계산했습니다.`;
 }
 
-function resetCalculator() { 
-  $('calcAudienceSelect').value = 'consumer'; $('calcPriceModeSelect').value = 'included'; $('calcInputModeSelect').value = 'py'; 
-  $('calcAreaInput').value = ''; if ($('calcLossRateInput')) $('calcLossRateInput').value = ''; 
-  syncCalcInputUi(); resetCalcResults(); runCalculator(); 
-}
-
-const memoArea = document.getElementById('workMemo');
-const clearBtn = document.getElementById('clearMemo');
-const autoResize = (el) => { if (!el) return; el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; };
-
-/* [정밀 교정] 탭 화면 전환 연동 함수 보완 */
-function setTab(tabId) {
-  // 모든 탭 버튼 활성화 클래스 조절
-  document.querySelectorAll('.tab-btn').forEach(btn => { 
-    btn.classList.toggle('active', btn.dataset.tab === tabId || btn.getAttribute('data-tab') === tabId); 
-  });
-  // 모든 탭 컨텐츠 패널 표시/숨김 처리
-  document.querySelectorAll('.tab-panel').forEach(panel => { 
-    panel.style.display = panel.id === tabId ? 'block' : 'none'; 
-  });
-  if(tabId === 'memoTab' && memoArea) { setTimeout(() => autoResize(memoArea), 50); }
-}
-
+function resetCalculator() { $('calcAudienceSelect').value='consumer'; $('calcPriceModeSelect').value='included'; $('calcInputModeSelect').value='py'; $('calcAreaInput').value=''; if($('calcLossRateInput')) $('calcLossRateInput').value=''; syncCalcInputUi(); resetCalcResults(); runCalculator(); }
+function runSelfTests() { console.assert(fmt(12000)==='12,000원','fmt formats'); if(products.length>0){ console.assert(getUnitValue(products[0],'consumer','sqm','included')===products[0].consumer.sqm,'included sqm'); console.assert(getUnitValue(products[0],'consumer','box','included')===products[0].consumer.box,'box raw'); console.assert(getUnitValue(products[0],'consumer','sqm','material')===Math.ceil(products[0].consumer.material/3.24/100)*100,'material sqm calc'); } }
 function initApp() {
-  fillSelect(); initPreviews(); renderAll(); syncCalcInputUi(); resetCalcResults(); runCalculator();
-  $('addBtn').addEventListener('click', () => addCode($('productSelect').value));
-  $('searchInput').addEventListener('input', renderAll);
-  $('audienceSelect').addEventListener('change', (e) => { state.audience = e.target.value; renderAll(); });
-  $('priceModeSelect').addEventListener('change', (e) => { state.priceMode = e.target.value; renderAll(); });
-  $('boxCheck').addEventListener('change', (e) => { state.box = e.target.checked; renderAll(); });
-  $('sqmCheck').addEventListener('change', (e) => { state.sqm = e.target.checked; renderAll(); });
-  $('resetBtn').addEventListener('click', resetAll);
-  $('saveBtn').addEventListener('click', saveCapture);
-  $('copyBtn').addEventListener('click', () => copyToClipboard($('copyText').value));
+  fillSelect(); initPreviews(); renderAll(); syncCalcInputUi(); resetCalcResults(); runCalculator(); runSelfTests();
+  $('addBtn').addEventListener('click',()=>addCode($('productSelect').value));
+  $('searchInput').addEventListener('input',renderAll);
+  $('audienceSelect').addEventListener('change',e=>{ state.audience=e.target.value; renderAll(); });
+  $('priceModeSelect').addEventListener('change',e=>{ state.priceMode=e.target.value; renderAll(); });
+  $('boxCheck').addEventListener('change',e=>{ state.box=e.target.checked; renderAll(); });
+  $('sqmCheck').addEventListener('change',e=>{ state.sqm=e.target.checked; renderAll(); });
+  $('resetBtn').addEventListener('click',resetAll);
+  $('saveBtn').addEventListener('click',saveCapture);
+  $('copyBtn').addEventListener('click',()=>copyToClipboard($('copyText').value));
+  ['calcProductSelect','calcAudienceSelect','calcPriceModeSelect','calcInputModeSelect'].forEach(id=>$(id).addEventListener('change',()=>{ if(id==='calcInputModeSelect') syncCalcInputUi(); runCalculator(); }));
+  $('calcAreaInput').addEventListener('input',runCalculator);
+  $('calcLossRateInput').addEventListener('input',runCalculator);
+  $('calcResetBtn').addEventListener('click',resetCalculator);
+  document.querySelectorAll('.js-copy-template').forEach(btn=>btn.addEventListener('click',()=>copyToClipboard(templates[btn.dataset.template] || '')));
+  document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>setTab(btn.dataset.tab)));
+}
+const memoArea = document.getElementById('workMemo');
+  const clearBtn = document.getElementById('clearMemo');
 
-  ['calcProductSelect', 'calcAudienceSelect', 'calcPriceModeSelect', 'calcInputModeSelect'].forEach((id) => {
-    $(id).addEventListener('change', () => { if (id === 'calcInputModeSelect') syncCalcInputUi(); runCalculator(); });
-  });
-  $('calcAreaInput').addEventListener('input', runCalculator);
-  $('calcLossRateInput').addEventListener('input', runCalculator);
-  $('calcResetBtn').addEventListener('click', resetCalculator);
-
-  document.querySelectorAll('.js-copy-template').forEach((btn) => { btn.addEventListener('click', () => copyToClipboard(templates[btn.dataset.template] || '')); });
-  
-  // 탭 클릭 시 확실하게 동작하도록 이벤트 핸들러 고정
-  document.querySelectorAll('.tab-btn').forEach((btn) => { 
-    btn.addEventListener('click', () => {
-      const targetTab = btn.dataset.tab || btn.getAttribute('data-tab');
-      setTab(targetTab);
-    }); 
-  });
+  // 높이 자동 조절 함수
+  const autoResize = (el) => {
+    el.style.height = 'auto';
+    el.style.height = el.scrollHeight + 'px';
+  };
 
   if (memoArea) {
-    memoArea.value = localStorage.getItem('jb_memo_data') || ''; setTimeout(() => autoResize(memoArea), 100);
-    memoArea.addEventListener('input', () => { localStorage.setItem('jb_memo_data', memoArea.value); autoResize(memoArea); });
+    memoArea.value = localStorage.getItem('jb_memo_data') || '';
+    
+    // 로드 시 높이 맞추기
+    setTimeout(() => autoResize(memoArea), 100);
+
+    memoArea.addEventListener('input', () => {
+      localStorage.setItem('jb_memo_data', memoArea.value);
+      autoResize(memoArea); // 입력할 때마다 높이 조절
+    });
   }
+
   if (clearBtn) {
-    clearBtn.addEventListener('click', () => { if (confirm('메모를 모두 삭제하시겠습니까?')) { memoArea.value = ''; localStorage.removeItem('jb_memo_data'); autoResize(memoArea); } });
-  }
-}
-if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initApp); } else { initApp(); }
-
-/* ==========================================================================
-   구글 스프레드시트 단가표 데이터 연동 모듈 (구조 싱크로 최적화)
-   ========================================================================== */
-(async function() {
-  const PRICING_CONFIG = { ID: '1lu3P1g_CTFdofwpWITXQgGKisUoZLPdFD1mxC29wf_k', NAME: '단가표' };
-  async function fetchPricingData() {
-    const url = `https://docs.google.com/spreadsheets/d/${PRICING_CONFIG.ID}/gviz/tq?tqx=out:json&headers=1&sheet=${encodeURIComponent(PRICING_CONFIG.NAME)}`;
-    try {
-      const response = await fetch(url); if (!response.ok) throw new Error('네트워크 응답 오류');
-      const text = await response.text(); const startIdx = text.indexOf('{'); const endIdx = text.lastIndexOf('}');
-      if (startIdx === -1 || endIdx === -1) throw new Error('JSON 포맷 오류');
-      const jsonData = JSON.parse(text.substring(startIdx, endIdx + 1));
-      if (jsonData.status === 'error') throw new Error('시트웹게시 확인 필요');
-      const rows = jsonData.table.rows; if (!rows || rows.length === 0) return;
-
-      const parsedProducts = [];
-      rows.forEach(row => {
-        if (!row || !row.c || !row.c[0]) return;
-        const code = String(row.c[0].v || '').trim();
-        if (!code || code === '품번') return;
-
-        const name = row.c[1]?.v ? String(row.c[1].v).trim() : '-';
-        const spec = row.c[2]?.v ? String(row.c[2].v).trim() : '-';
-        
-        // 원본 로직 매칭용 싱크
-        const box_m2 = Number(row.c[3]?.v) || 0;         
-        const sheets_per_box = Number(row.c[4]?.v) || 0; 
-
-        const consumer_py = Number(row.c[5]?.v) || 0;
-        const consumer_material = Number(row.c[6]?.v) || 0;
-        const consumer_sqm = Number(row.c[7]?.v) || 0;
-        const consumer_box = Number(row.c[8]?.v) || 0;
-
-        const vendor_py = Number(row.c[9]?.v) || 0;
-        const vendor_material = Number(row.c[10]?.v) || 0;
-        const vendor_sqm = Number(row.c[11]?.v) || 0;
-        const vendor_box = Number(row.c[12]?.v) || 0;
-
-        parsedProducts.push({
-          code, name, spec, sheets_per_box, box_m2,
-          consumer: { py: consumer_py, sqm: consumer_sqm, box: consumer_box, material: consumer_material },
-          vendor: { py: vendor_py, sqm: vendor_sqm, box: vendor_box, material: vendor_material }
-        });
-      });
-
-      if (parsedProducts.length > 0) {
-        products = parsedProducts; fillSelect(); renderAll(); runCalculator();
+    clearBtn.addEventListener('click', () => {
+      if (confirm('메모를 모두 삭제하시겠습니까?')) {
+        memoArea.value = '';
+        localStorage.removeItem('jb_memo_data');
+        autoResize(memoArea); // 삭제 후 높이 초기화
       }
-    } catch (error) { console.error('단가표 동기화 실패:', error); }
-  }
-  if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', fetchPricingData); } else { fetchPricingData(); }
-})();
-
-/* ==========================================================================
-   실시간 재고현황 연동 모듈
-   ========================================================================== */
-(function() {
-  const STOCK_CONFIG = { ID: '1lu3P1g_CTFdofwpWITXQgGKisUoZLPdFD1mxC29wf_k', NAME: '재고현황' };
-  async function fetchStockData() {
-    const url = `https://docs.google.com/spreadsheets/d/${STOCK_CONFIG.ID}/gviz/tq?tqx=out:json&headers=1&sheet=${encodeURIComponent(STOCK_CONFIG.NAME)}`;
+    });
+  }// PRICE 시트에서 products 로드 후 앱 초기화
+async function startApp() {
     try {
-      const response = await fetch(url); if (!response.ok) throw new Error('네트워크 응답 에러');
-      const text = await response.text(); const startIdx = text.indexOf('{'); const endIdx = text.lastIndexOf('}');
-      if (startIdx === -1 || endIdx === -1) throw new Error('JSON 구조 분석 실패');
-      const jsonData = JSON.parse(text.substring(startIdx, endIdx + 1));
-      renderStockTable(jsonData.table.rows);
-    } catch (error) {
-      console.error('재고 로드 실패:', error);
-      const body = document.getElementById('stockTableBody');
-      if (body) {
-        body.innerHTML = `<tr><td colspan="6" style="padding:25px; color:#d63031; font-weight:bold; background:#fff5f5;">시트 데이터를 읽을 수 없습니다.</td></tr>`;
-      }
+        await loadProducts();
+    } catch (e) {
+        console.error('단가 데이터 로드 실패:', e.message);
+        // 로드 실패 시에도 UI는 띄움 (products = [] 상태)
     }
-  }    
-  function renderStockTable(rows) {
-    const tbody = document.getElementById('stockTableBody'); if (!tbody) return; tbody.innerHTML = '';
-    if (!rows || rows.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="padding:20px; color:#777;">표에 표시할 데이터가 없습니다.</td></tr>'; return; }
+    initApp();
+}
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startApp);
+} else {
+    startApp();
+}
+
+
+// ============================================================
+//  구글 시트 설정 (단일 ID, 탭 이름만 구분)
+// ============================================================
+const SHEET_CONFIG = {
+    ID: '1lu3P1g_CTFdofwpWITXQgGKisUoZLPdFD1mxC29wf_k',
+    PRICE:   'PRCIE',
+    STOCK:   'STOCK',
+    TOOLTIP: 'TOOLTIP'
+};
+
+// 구글 시트 gviz JSON 파싱 공통 함수
+async function fetchSheetJson(sheetName) {
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_CONFIG.ID}/gviz/tq?tqx=out:json&headers=1&sheet=${encodeURIComponent(sheetName)}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`네트워크 오류 (${sheetName})`);
+    const text = await res.text();
+    const start = text.indexOf('{');
+    const end   = text.lastIndexOf('}');
+    if (start === -1 || end === -1) throw new Error(`JSON 파싱 실패 (${sheetName})`);
+    const json = JSON.parse(text.substring(start, end + 1));
+    if (json.status === 'error') throw new Error(`시트 접근 오류 (${sheetName})`);
+    return json.table.rows;
+}
+
+function getCellVal(cell) {
+    if (!cell) return '';
+    if (cell.f !== undefined) return String(cell.f).trim();
+    return (cell.v !== null && cell.v !== undefined) ? String(cell.v).trim() : '';
+}
+
+// ============================================================
+//  PRICE 시트 → products 배열 로드
+//  컬럼 순서: 품번(0) 품명(1) 스펙(2) 박스면적(3) 박스당장수(4)
+//            소비자가PY(5) 자재소비자가PY(6) 소비자가m²(7) 소비자가BOX(8)
+//            업체가PY(9) 자재업체가PY(10) 업체가m²(11) 업체가BOX(12)
+// ============================================================
+async function loadProducts() {
+    const rows = await fetchSheetJson(SHEET_CONFIG.PRICE);
+    products = rows
+        .filter(row => row && row.c && getCellVal(row.c[0]) && getCellVal(row.c[0]) !== '품번')
+        .map(row => ({
+            code:           getCellVal(row.c[0]),
+            name:           getCellVal(row.c[1]),
+            spec:           getCellVal(row.c[2]),
+            box_m2:         parseFloat(getCellVal(row.c[3])) || 0,
+            sheets_per_box: parseInt(getCellVal(row.c[4]),  10) || 0,
+            consumer: {
+                py:       parseInt(getCellVal(row.c[5]),  10) || 0,
+                material: parseInt(getCellVal(row.c[6]),  10) || 0,
+                sqm:      parseInt(getCellVal(row.c[7]),  10) || 0,
+                box:      parseInt(getCellVal(row.c[8]),  10) || 0
+            },
+            vendor: {
+                py:       parseInt(getCellVal(row.c[9]),  10) || 0,
+                material: parseInt(getCellVal(row.c[10]), 10) || 0,
+                sqm:      parseInt(getCellVal(row.c[11]), 10) || 0,
+                box:      parseInt(getCellVal(row.c[12]), 10) || 0
+            }
+        }));
+}
+
+// ============================================================
+//  TOOLTIP 시트 캐시
+//  컬럼: 품번(0) 품명(1) 스펙(2)  — 스펙값이 '단종'이면 단종 표시
+// ============================================================
+let tooltipMap = null;
+
+async function loadTooltipMap() {
+    if (tooltipMap) return;
+    try {
+        const rows = await fetchSheetJson(SHEET_CONFIG.TOOLTIP);
+        tooltipMap = {};
+        rows.forEach(row => {
+            if (!row || !row.c) return;
+            const code = getCellVal(row.c[0]);
+            if (!code || code === '품번') return;
+            tooltipMap[code.toUpperCase()] = {
+                name: getCellVal(row.c[1]),
+                spec: getCellVal(row.c[2])
+            };
+        });
+    } catch (e) {
+        console.warn('툴팁 데이터 로드 실패:', e.message);
+        tooltipMap = {};
+    }
+}
+
+// ============================================================
+//  재고현황 (STOCK 시트) — 단일 정의
+// ============================================================
+async function fetchStockData() {
+    const tbody = document.getElementById('stockTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = `<tr><td colspan="6" style="padding:20px;text-align:center;color:#888;">데이터를 불러오는 중...</td></tr>`;
+
+    try {
+        // 재고 + 툴팁 병렬 로드
+        await Promise.all([
+            fetchSheetJson(SHEET_CONFIG.STOCK).then(rows => renderStockTable(rows)),
+            loadTooltipMap()
+        ]);
+    } catch (error) {
+        console.error('재고 로드 실패:', error);
+        tbody.innerHTML = `<tr><td colspan="6" style="padding:25px;color:#d63031;font-weight:bold;text-align:center;">
+            시트 데이터를 읽을 수 없습니다. (원인: ${error.message})</td></tr>`;
+    }
+}
+
+function renderStockTable(rows) {
+    const tbody = document.getElementById('stockTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    if (!rows || rows.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="padding:20px;text-align:center;color:#777;">표시할 데이터가 없습니다.</td></tr>';
+        return;
+    }
+
+    // 1단계: 빈 행 제거 및 LOT 병합 처리
+    const processedRows = [];
+    let currentItemCode = '';
+
     rows.forEach(row => {
-      if (!row || !row.c || !row.c[0]) return; const itemCode = String(row.c[0].v || '').trim(); if (!itemCode || itemCode === '품번') return;
-      const lotInfo = row.c[1]?.v || '-'; const boxSpec = row.c[2]?.v || '-'; const curStock = row.c[3]?.v || 0; const totalBox = Number(row.c[4]?.v) || 0; const totalM2 = row.c[5]?.v || '0';
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td><strong>${itemCode}</strong></td><td>${lotInfo}</td><td>${boxSpec}</td><td>${curStock}</td><td>${totalBox}</td><td>${totalM2} ㎡</td>`;
-      tr.addEventListener('mousemove', (e) => {
-        const tooltip = document.getElementById('stockTooltip');
-        if (tooltip && typeof products !== 'undefined') {
-          const p = products.find(x => x.code === itemCode);
-          tooltip.innerHTML = `<strong>${itemCode}</strong><br>규격: ${p ? p.spec : '규격 정보 없음'}`;
-          tooltip.style.cssText = `display: block; left: ${e.pageX + 15}px; top: ${e.pageY + 15}px;`;
+        if (!row || !row.c) return;
+        const itemCode = getCellVal(row.c[0]);
+        const lotInfo  = getCellVal(row.c[1]);
+        const boxSpec  = getCellVal(row.c[2]);
+        const curStock = getCellVal(row.c[3]);
+        const totalBox = getCellVal(row.c[4]);
+        const totalM2  = getCellVal(row.c[5]);
+
+        if (!itemCode && !lotInfo && !boxSpec && !curStock && !totalBox && !totalM2) return;
+        if (itemCode === '품번' || itemCode.includes('모든 자재') || itemCode.includes('통합') || lotInfo.includes('통합')) return;
+
+        if (itemCode) currentItemCode = itemCode;
+
+        if (!itemCode && lotInfo.includes('/') && processedRows.length > 0) {
+            processedRows[processedRows.length - 1].lotInfo += ` (${lotInfo})`;
+            return;
         }
-      });
-      tr.addEventListener('mouseleave', () => { document.getElementById('stockTooltip').style.display = 'none'; });
-      tbody.appendChild(tr);
+
+        processedRows.push({
+            itemCode: itemCode || currentItemCode,
+            lotInfo:  lotInfo  || '-',
+            boxSpec:  boxSpec  || '-',
+            curStock: curStock || 0,
+            totalBox: totalBox || '-',
+            totalM2:  totalM2  || '-'
+        });
     });
-  }
-  document.addEventListener('DOMContentLoaded', () => {
+
+    // 2단계: 화면 렌더링
+    let lastSeenItemCode = '';
+    let isGrayGroup = false;
+
+    processedRows.forEach(d => {
+        let displayItemCode = '';
+        if (d.itemCode !== lastSeenItemCode) {
+            isGrayGroup = !isGrayGroup;
+            lastSeenItemCode = d.itemCode;
+            displayItemCode = `<strong>${d.itemCode}</strong>`;
+        }
+
+        const tr = document.createElement('tr');
+        tr.className = isGrayGroup ? 'bg-group-gray' : 'bg-group-white';
+
+        const m2Raw = String(d.totalM2);
+        const m2Display = (!d.totalM2 || d.totalM2 === '-' || d.totalM2 === '0')
+            ? `<span style="color:#d63031;font-weight:bold;">-</span>`
+            : (m2Raw.includes('㎡') ? m2Raw : `${m2Raw} ㎡`);
+
+        const totalBoxDisplay = (!d.totalBox || d.totalBox === '-' || d.totalBox === '0')
+            ? `<span style="color:#d63031;font-weight:bold;">-</span>`
+            : d.totalBox;
+
+        tr.innerHTML = `
+            <td style="text-align:center;">${displayItemCode}</td>
+            <td style="text-align:center;">${d.lotInfo}</td>
+            <td style="text-align:center;">${d.boxSpec}</td>
+            <td style="text-align:center;">${d.curStock}</td>
+            <td style="text-align:center;">${totalBoxDisplay}</td>
+            <td style="text-align:center;">${m2Display}</td>
+        `;
+
+        // 툴팁 — TOOLTIP 시트 기반
+        tr.addEventListener('mousemove', async (e) => {
+            const tooltip = document.getElementById('stockTooltip');
+            if (!tooltip) return;
+
+            // tooltipMap 아직 안 로드됐으면 로드 후 재시도
+            if (!tooltipMap) await loadTooltipMap();
+
+            const key = d.itemCode.trim().toUpperCase();
+            const info = tooltipMap[key];
+
+            if (info) {
+                if (info.spec === '단종') {
+                    tooltip.innerHTML = `<strong>[${d.itemCode}] ${info.name}</strong><br><span style="color:#ff4d4d;font-weight:bold;">단종</span>`;
+                } else {
+                    tooltip.innerHTML = `<strong>[${d.itemCode}] ${info.name}</strong><br>규격: ${info.spec || '정보 없음'}`;
+                }
+            } else {
+                tooltip.innerHTML = `<strong>[${d.itemCode}]</strong><br>정보 없음`;
+            }
+
+            tooltip.style.cssText = `display:block;left:${e.pageX + 15}px;top:${e.pageY + 15}px;`;
+        });
+
+        tr.addEventListener('mouseleave', () => {
+            const tooltip = document.getElementById('stockTooltip');
+            if (tooltip) tooltip.style.display = 'none';
+        });
+
+        tbody.appendChild(tr);
+    });
+}
+
+// 재고 탭 클릭 시 데이터 로드
+document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', () => { 
-        const tabName = btn.dataset.tab || btn.getAttribute('data-tab');
-        if (tabName === 'stockTab') fetchStockData(); 
-      });
+        btn.addEventListener('click', () => {
+            if (btn.dataset.tab === 'stockTab') fetchStockData();
+        });
     });
-  });
-})();
+});
 </script>
-<div id="stockTooltip" class="stock-tooltip"></div>
 </body>
 </html>
