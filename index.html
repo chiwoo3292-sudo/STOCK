@@ -317,7 +317,7 @@
 <div id="toast" class="toast">복사 완료</div>
 
 <script>
-// 전역 마스터 제품 데이터 객체 구조 (구글 시트 로드 실패 시 가동될 백업 기본셋)
+// 전역 마스터 제품 데이터 객체 구조 (시트 로드 전 기본 백업셋)
 let products = [
   { code: "BR-01", name: "바람 내추럴 오크", spec: "115 * 800 * 7.5T", sheets_per_box: 32, box_m2: 2.94, consumer: { py: 150000, sqm: 46296, box: 136110, material: 90000 }, vendor: { py: 120000, sqm: 37037, box: 108880, material: 70000 } }
 ];
@@ -410,7 +410,6 @@ function buildRightHeader() {
 
 function boxMeta(partyProduct, party) { 
   const amount = fmt(getUnitValue(partyProduct, party, 'box')); 
-  // 단가표 우측 안내 렌더링 시 시트 파싱값에 맞게 정합성 정렬
   return `<div>${amount}</div><div class="muted meta-box">${partyProduct.box_m2}장 / ${partyProduct.sheets_per_box}㎡</div>`; 
 }
 
@@ -490,7 +489,7 @@ function resetCalcResults() {
 }
 
 /* ==========================================================================
-   [핵심] 원본 수식 보존 및 정상 결과 도출 계산 엔진
+   [수식 보존] 원본 수식 가동 계산기 엔진
    ========================================================================== */
 function runCalculator() {
   const code = $('calcProductSelect').value;
@@ -513,7 +512,6 @@ function runCalculator() {
     $('summaryPy').textContent = fmt(getUnitValue(p, party, 'py', priceMode));
     $('summarySqm').textContent = fmt(getUnitValue(p, party, 'sqm', priceMode));
     $('summaryBox').textContent = fmt(getUnitValue(p, party, 'box', priceMode));
-    // 원본 수식 구조에 따른 변수명 출력 매칭
     $('summaryBoxMeta').textContent = `${p.box_m2}장 / ${p.sheets_per_box}㎡`;
     $('summaryMode').textContent = `${party === 'consumer' ? '소비자가' : '업체가'} / ${priceMode === 'material' ? '자재 별도' : '시공비 포함'}`;
     $('summaryLoss').textContent = lossRate ? `${formatDecimal(lossRate)}%` : '0%';
@@ -537,7 +535,6 @@ function runCalculator() {
     inputPy = inputSqm / PY_FACTOR;
   }
 
-  // 원본 로직 유지: p.sheets_per_box 자리에 실제 박스당 ㎡ 데이터가 바인딩되어 동작함
   if (inputMode === 'box') {
     calcBoxes = Math.ceil(raw * lossMultiplier);
   } else {
@@ -564,7 +561,6 @@ function runCalculator() {
   const totalVat = calcVatIncluded(total);
   const priceLabel = `${party === 'consumer' ? '소비자가' : '업체가'} / ${priceMode === 'material' ? '자재 별도' : '시공비 포함'}`;
 
-  // UI 출력부 업데이트 (원본 코드와 100% 동일한 완벽 출력부 보존)
   $('resultAreaText').textContent = inputMode === 'py' ? `${raw}평` : inputMode === 'sqm' ? `${raw}㎡` : `${inputBoxes}박스`;
   $('resultAreaSub').textContent = inputMode === 'py' ? `(${formatDecimal(inputSqm)}㎡)` : inputMode === 'sqm' ? `(${formatDecimal(inputPy)}평)` : `(${formatDecimal(inputSqm)}㎡)`;
   $('resultBoxes').textContent = `${calcBoxes}박스`;
@@ -593,9 +589,16 @@ const memoArea = document.getElementById('workMemo');
 const clearBtn = document.getElementById('clearMemo');
 const autoResize = (el) => { if (!el) return; el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; };
 
+/* [정밀 교정] 탭 화면 전환 연동 함수 보완 */
 function setTab(tabId) {
-  document.querySelectorAll('.tab-btn').forEach(btn => { btn.classList.toggle('active', btn.dataset.tab === tabId); });
-  document.querySelectorAll('.tab-panel').forEach(panel => { panel.style.display = panel.id === tabId ? 'block' : 'none'; });
+  // 모든 탭 버튼 활성화 클래스 조절
+  document.querySelectorAll('.tab-btn').forEach(btn => { 
+    btn.classList.toggle('active', btn.dataset.tab === tabId || btn.getAttribute('data-tab') === tabId); 
+  });
+  // 모든 탭 컨텐츠 패널 표시/숨김 처리
+  document.querySelectorAll('.tab-panel').forEach(panel => { 
+    panel.style.display = panel.id === tabId ? 'block' : 'none'; 
+  });
   if(tabId === 'memoTab' && memoArea) { setTimeout(() => autoResize(memoArea), 50); }
 }
 
@@ -619,7 +622,14 @@ function initApp() {
   $('calcResetBtn').addEventListener('click', resetCalculator);
 
   document.querySelectorAll('.js-copy-template').forEach((btn) => { btn.addEventListener('click', () => copyToClipboard(templates[btn.dataset.template] || '')); });
-  document.querySelectorAll('.tab-btn').forEach((btn) => { btn.addEventListener('click', () => setTab(btn.dataset.tab)); });
+  
+  // 탭 클릭 시 확실하게 동작하도록 이벤트 핸들러 고정
+  document.querySelectorAll('.tab-btn').forEach((btn) => { 
+    btn.addEventListener('click', () => {
+      const targetTab = btn.dataset.tab || btn.getAttribute('data-tab');
+      setTab(targetTab);
+    }); 
+  });
 
   if (memoArea) {
     memoArea.value = localStorage.getItem('jb_memo_data') || ''; setTimeout(() => autoResize(memoArea), 100);
@@ -655,9 +665,7 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
         const name = row.c[1]?.v ? String(row.c[1].v).trim() : '-';
         const spec = row.c[2]?.v ? String(row.c[2].v).trim() : '-';
         
-        // [정밀 매칭 완료] 원본 계산기 수식의 데이터 흐름에 맞춰 변수 교차 대입 처리
-        // 구글시트 D열(박스당 장수) ➔ box_m2 변수에 할당하여 원본 엔진에서 '장수'로 사용되게 함
-        // 구글시트 E열(박스당 면적) ➔ sheets_per_box 변수에 할당하여 원본 엔진에서 '면적'으로 사용되게 함
+        // 원본 로직 매칭용 싱크
         const box_m2 = Number(row.c[3]?.v) || 0;         
         const sheets_per_box = Number(row.c[4]?.v) || 0; 
 
@@ -680,7 +688,6 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
 
       if (parsedProducts.length > 0) {
         products = parsedProducts; fillSelect(); renderAll(); runCalculator();
-        console.log('단가표 실시간 원격 데이터 동기화 성공.');
       }
     } catch (error) { console.error('단가표 동기화 실패:', error); }
   }
@@ -704,8 +711,7 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
       console.error('재고 로드 실패:', error);
       const body = document.getElementById('stockTableBody');
       if (body) {
-        body.innerHTML = `<tr><td colspan="6" style="padding:25px; color:#d63031; font-weight:bold; background:#fff5f5;">시트 데이터를 읽을 수 없습니다.<br><button type="button" id="retryStockBtn" style="margin-top:10px; padding:4px 10px; background:#111; color:#fff; border:none; border-radius:4px; cursor:pointer;">다시 시도</button></td></tr>`;
-        document.getElementById('retryStockBtn')?.addEventListener('click', fetchStockData);
+        body.innerHTML = `<tr><td colspan="6" style="padding:25px; color:#d63031; font-weight:bold; background:#fff5f5;">시트 데이터를 읽을 수 없습니다.</td></tr>`;
       }
     }
   }    
@@ -731,7 +737,10 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
   }
   document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', () => { if (btn.dataset.tab === 'stockTab') fetchStockData(); });
+      btn.addEventListener('click', () => { 
+        const tabName = btn.dataset.tab || btn.getAttribute('data-tab');
+        if (tabName === 'stockTab') fetchStockData(); 
+      });
     });
   });
 })();
