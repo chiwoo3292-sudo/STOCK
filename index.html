@@ -1030,7 +1030,7 @@ async function loadProducts() {
             code:           getCellVal(row.c[0]),
             name:           getCellVal(row.c[1]),
             spec:           getCellVal(row.c[2]),
-            box_m2:         toNum(row.c[3]) || parseFloat(getCellVal(row.c[3])) || 0,
+            box_m2:         parseFloat(getCellVal(row.c[3]).replace(/[,\s₩원]/g, '')) || 0,
             sheets_per_box: toNum(row.c[4]),
             consumer: {
                 py:       toNum(row.c[5]),
