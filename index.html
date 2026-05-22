@@ -1,0 +1,1122 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>바람 단가 안내 시스템</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@latest/dist/web/static/pretendard.css" />
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+<style>
+  /* 1. 기본 초기화 및 범용 스타일 */
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Pretendard", system-ui, -apple-system, "Segoe UI", "Noto Sans KR", sans-serif; background: #f5f5f5; color: #111; }
+  .wrap { max-width: 1880px; margin: 0 auto; padding: 10px; }
+  .card { background: #fff; border: 1px solid #e8e8e8; border-radius: 18px; padding: 18px; }
+  .title { margin: 0 0 14px; font-size: 16px; font-weight: 700; }
+  .muted { color: #777; font-size: 12px; }
+  .pill { display: inline-flex; align-items: center; min-height: 42px; padding: 0 12px; border-radius: 999px; font-size: 12px; color: #444; }
+  .meta-box { white-space: normal; line-height: 1.45; }
+  .notice { margin-top: 14px; font-size: 13px; color: #555; line-height: 1.6; }
+  .notice ul { margin: 8px 0 0 18px; padding: 0; }
+
+  /* 2. 레이아웃 및 상단 탭 시스템 */
+  .layout { display: grid; grid-template-columns: 1.3fr 1fr; gap: 18px; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+  .tab-btn { min-height: 40px; padding: 0 16px; border: 1px solid #d8d8d8; border-radius: 999px; background: #fff; color: #444; font-size: 13px; font-weight: 700; cursor: pointer; }
+  .tab-btn.active { background: #111; color: #fff; border-color: #111; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* 3. 단가표 화면 컨트롤 및 전용 테이블 */
+  .topbar { display: grid; grid-template-columns: auto minmax(180px, 280px); justify-content: space-between; gap: 10px; align-items: center; margin-bottom: 12px; }
+  .product-add { display: grid; grid-template-columns: minmax(220px, 240px) auto; gap: 8px; align-items: center; }
+  .scroll { max-height: 730px; overflow: auto; border: 1px solid #eee; border-radius: 14px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 9px 10px; border-bottom: 1px solid #eee; text-align: left; vertical-align: top; font-size: 13px; line-height: 1.45; }
+  th { background: #fafafa; color: #444; font-size: 12px; position: sticky; top: 0; z-index: 1; }
+  td.name, td.spec-left, td.spec-right { white-space: nowrap; }
+
+  /* 4. 우측 계산기 입력 폼 및 컨트롤 */
+  .right-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 12px; }
+  .quote-date { color: #777777; font-size: 12px; line-height: 1.4; white-space: nowrap; text-align: right; margin-left: auto; padding-top: 2px; }
+  .right-controls { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; margin-bottom: 10px; }
+  .right-actions-bottom { display: flex; justify-content: flex-end; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .plain-select.no-capture { border: none; box-shadow: none; background: transparent; width: auto; min-width: 0; padding: 0 24px 0 0; font-weight: 700; }
+  .plain-select.no-capture:focus { outline: none; }
+  
+  /* 5. 입력 필드 요소 (공통) */
+  select, input[type="text"], input[type="number"], textarea { font-family: inherit; font-size: 13px; border: 1px solid #ddd; border-radius: 12px; background: #fff; }
+  select, input[type="text"], input[type="number"] { height: 38px; padding: 0 12px; width: 100%; }
+  textarea { width: 100%; min-height: 380px; padding: 12px; line-height: 1.6; resize: vertical; }
+  button { min-height: 35px; padding: 0 14px; border: 1px solid #111; border-radius: 12px; background: #111; color: #fff; font-size: 12px; font-weight: 700; cursor: pointer; }
+  button.secondary { background: #fff; color: #111; border-color: #ddd; }
+
+  /* 6. 옵션 체크 칩 및 카피/미리보기 기능 */
+  .check-row { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }
+  .check-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #444; }
+  .grid-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+  .grid-tabs .quick-preview-trigger .secondary { width: 100%; min-height: 44px; padding: 0 4px; border: 1px solid #d8d8d8; border-radius: 8px; background: #fff; color: #444; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; text-align: center; }
+  .quick-copy-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; align-items: stretch; margin-bottom: 12px; }
+  .quick-copy-label { grid-column: 1 / -1; color: #777; font-size: 12px; margin-bottom: 2px; }
+  .quick-preview-trigger { position: relative; }
+  .quick-preview-trigger .secondary { width: 100%; }
+  .quick-preview { position: absolute; bottom: calc(100% + 8px); left: 0; display: none; width: 280px; max-height: 180px; overflow: auto; padding: 12px; border: 1px solid #ddd; border-radius: 12px; background: #fff; box-shadow: 0 10px 30px rgba(0,0,0,.12); font-size: 12px; line-height: 1.55; color: #333; white-space: pre-wrap; z-index: 20; }
+  .quick-preview-trigger:last-child .quick-preview { left: auto; right: 0; }
+  .quick-preview-trigger:hover .quick-preview, .quick-preview-trigger:focus-within .quick-preview { display: block; }
+
+  /* 7. 대형 헤베 계산기 전용 스타일 */
+  .calc-layout { display: grid; grid-template-columns: 420px 1fr; gap: 18px; }
+  .calc-form { display: grid; gap: 14px; }
+  .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .calc-field-label { margin-bottom: 8px; color: #666; font-size: 12px; }
+  .calc-form select { height: 46px; font-size: 14px; }
+  .calc-area-input { height: 72px !important; padding: 0 18px !important; font-size: 28px !important; font-weight: 700; border-radius: 16px !important; }
+  .calc-hint { margin-top: 8px; font-size: 12px; color: #888; }
+  .calc-result-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .result-card { border: 1px solid #ececec; border-radius: 16px; padding: 16px; background: #fff; }
+  .result-card h3 { margin: 0 0 8px; font-size: 12px; color: #666; font-weight: 600; }
+  .result-value { font-size: 28px; font-weight: 800; line-height: 1.2; }
+  .result-sub { margin-top: 6px; font-size: 13px; color: #666; line-height: 1.4; }
+  .calc-summary { display: grid; gap: 12px; }
+  .summary-list { border: 1px solid #eee; border-radius: 16px; overflow: hidden; }
+  .summary-row { display: grid; grid-template-columns: 160px 1fr; gap: 12px; padding: 12px 14px; border-bottom: 1px solid #eee; font-size: 13px; }
+  .summary-row:last-child { border-bottom: none; }
+  .summary-label { color: #666; }
+  .minor-meta { padding: 12px 14px; border: 1px dashed #e5e5e5; border-radius: 14px; background: #fcfcfc; }
+  .minor-meta-title { margin: 0 0 8px; font-size: 12px; color: #888; font-weight: 700; }
+  .minor-meta-text { font-size: 12px; color: #888; line-height: 1.6; }
+  .calc-notice { font-size: 12px; color: #666; line-height: 1.6; }
+
+  /* 8. 실시간 재고현황 연동 테이블 및 툴팁 */
+  .stock-table-wrapper { overflow-x: auto; margin-top: 10px; border-radius: 8px; border: 1px solid #eee; }
+  #stockTable { width: 100%; border-collapse: collapse; font-size: 14px; }
+  #stockTable th { background-color: #f8f9fa; color: #555; padding: 12px 8px; border-bottom: 2px solid #ddd; }
+  #stockTable td { padding: 12px 8px; border-bottom: 1px solid #eee; text-align: center; }
+  .stock-tooltip { position: absolute; display: none; background: rgba(0, 0, 0, 0.8); color: #fff; padding: 8px 12px; border-radius: 5px; font-size: 13px; z-index: 9999; pointer-events: none; line-height: 1.4; }
+
+  /* 9. 기타 유틸리티 (토스트, 캡처, 반응형 설정) */
+  .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(12px); background: #111; color: #fff; padding: 10px 14px; border-radius: 999px; font-size: 12px; font-weight: 700; opacity: 0; pointer-events: none; transition: opacity .2s ease, transform .2s ease; z-index: 9999; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .is-capturing .no-capture { display: none !important; }
+  .desktop-only { display: block; }
+  .mobile-only { display: none; }
+</style>
+</head>
+
+<body>
+<div class="wrap">
+  <div class="tabs no-capture">
+    <button type="button" class="tab-btn active" data-tab="pricingTab">단가표</button>
+    <button type="button" class="tab-btn" data-tab="calculatorTab">계산기</button>
+    <button type="button" class="tab-btn" data-tab="memoTab">메모장</button>
+    <button type="button" class="tab-btn" data-tab="stockTab">재고현황</button>
+  </div>
+
+  <section id="pricingTab" class="tab-panel active">
+    <div class="layout">
+      <div class="card">
+        <h2 class="title">BARAM 단가표</h2>
+        <div class="topbar">
+          <div class="product-add">
+            <select id="productSelect"></select>
+            <button id="addBtn" type="button">추가</button>
+          </div>
+          <input type="text" id="searchInput" placeholder="빠른검색(품번/품명/스펙)" />
+        </div>
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:10%;">품번</th>
+                <th style="width:16%;">품명</th>
+                <th style="width:24%;">스펙</th>
+                <th style="width:12%;">소비자가(평)</th>
+                <th style="width:12%;">업체가(평)</th>
+                <th style="width:13%;">자재 소비자가</th>
+                <th style="width:13%;">자재 업체가</th>
+              </tr>
+            </thead>
+            <tbody id="leftTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-rows:auto auto;gap:18px;">
+        <div class="card" id="captureArea">
+          <div class="right-head">
+            <h2 class="title" style="margin-bottom:0;">단가 안내</h2>
+            <div class="quote-date" id="quoteDate">견적일 : -</div>
+          </div>
+
+          <div class="right-controls no-capture">
+            <div class="check-row">
+              <label class="check-chip"><input type="checkbox" id="sqmCheck" /> m² 단가</label>
+              <label class="check-chip"><input type="checkbox" id="boxCheck" /> 박스당 단가</label>
+            </div>
+            <select id="audienceSelect" class="plain-select no-capture">
+              <option value="both">소비자&업체가</option>
+              <option value="consumer">소비자가</option>
+            </select>
+            <select id="priceModeSelect" class="plain-select no-capture">
+              <option value="included">시공비 포함</option>
+              <option value="material">자재 별도</option>
+            </select>
+          </div>
+
+          <div class="scroll" style="max-height:420px;">
+            <table>
+              <thead><tr id="rightHeaderRow"></tr></thead>
+              <tbody id="rightTable"></tbody>
+            </table>
+          </div>
+
+          <div class="notice">
+            <ul>
+              <li id="noticeLinePrimary">시공비 포함 (VAT 별도)</li>
+              <li id="noticeLineSecondary">공과잡비 별도 (운임비, 양중비 등)</li>
+              <li>평당 단순 단가이며, 실제 견적과 차이가 있을 수 있습니다.</li>
+            </ul>
+          </div>
+
+          <div class="right-actions-bottom no-capture">
+            <span class="pill" id="countText">선택 0 / 10</span>
+            <button id="resetBtn" type="button" class="secondary">선택 초기화</button>
+            <button id="saveBtn" type="button">저장하기</button>
+          </div>
+        </div>
+
+        <div class="card desktop-only">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+            <h2 class="title" style="margin-bottom:0;">문자 / 카톡</h2>
+            <button id="copyBtn" type="button">복사</button>
+          </div>
+          <div class="quick-copy-row">
+            <div class="quick-copy-label">퀵 안내</div>
+            <div class="quick-preview-trigger"><button type="button" class="secondary js-copy-template" data-template="sample">샘플 요청 안내</button><div class="quick-preview" data-preview="sample"></div></div>
+            <div class="quick-preview-trigger"><button type="button" class="secondary js-copy-template" data-template="price">단가 안내</button><div class="quick-preview" data-preview="price"></div></div>
+            <div class="quick-preview-trigger"><button type="button" class="secondary js-copy-template" data-template="reserve">예약 링크</button><div class="quick-preview" data-preview="reserve"></div></div>
+            <div class="quick-preview-trigger"><button type="button" class="secondary js-copy-template" data-template="account">입금 계좌</button><div class="quick-preview" data-preview="account"></div></div>
+            <div class="quick-preview-trigger"><button type="button" class="secondary js-copy-template" data-template="as">A/S 안내</button><div class="quick-preview" data-preview="as"></div></div>
+            <div class="quick-preview-trigger"><button type="button" class="secondary js-copy-template" data-template="return">반품 안내</button><div class="quick-preview" data-preview="return"></div></div>
+          </div>
+          <textarea id="copyText"></textarea>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="calculatorTab" class="tab-panel">
+    <div class="calc-layout">
+      <div class="card">
+        <h2 class="title">단가 계산기</h2>
+        <div class="calc-form">
+          <div>
+            <div class="muted" style="margin-bottom:6px;">제품 선택</div>
+            <select id="calcProductSelect"></select>
+          </div>
+          <div class="form-grid-2">
+            <div>
+              <div class="calc-field-label">가격 기준</div>
+              <select id="calcAudienceSelect">
+                <option value="consumer">소비자가</option>
+                <option value="vendor">업체가</option>
+              </select>
+            </div>
+            <div>
+              <div class="calc-field-label">가격 모드</div>
+              <select id="calcPriceModeSelect">
+                <option value="included">시공비 포함</option>
+                <option value="material">자재 별도</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-grid-2">
+            <div>
+              <div class="calc-field-label">입력 기준</div>
+              <select id="calcInputModeSelect">
+                <option value="py">평수로 입력</option>
+                <option value="sqm">㎡로 입력</option>
+                <option value="box">박스 수로 입력</option>
+              </select>
+            </div>
+            <div>
+              <div class="calc-field-label" id="calcInputLabel">면적 입력</div>
+              <input type="number" id="calcAreaInput" class="calc-area-input" min="0" step="0.01" placeholder="예: 25" />
+              <div class="calc-hint" id="calcInputHint">단가표 숫자에 입력값만 곱해서 계산합니다.</div>
+            </div>
+          </div>
+          <div class="form-grid-2">
+            <div>
+              <div class="calc-field-label">로스율</div>
+              <input type="number" id="calcLossRateInput" min="0" step="0.1" placeholder="예: 5" />
+              <div class="calc-hint">입력값 기준 추가 여유분 %</div>
+            </div>
+            <div>
+              <div class="calc-field-label">적용 방식</div>
+              <div class="calc-hint" style="margin-top:14px;">평/㎡ 입력 시 필요 박스 수에 반영되고, 박스 수 입력 시에는 입력 박스 수에 로스율이 적용됩니다.</div>
+            </div>
+          </div>
+          <div>
+            <button type="button" id="calcResetBtn" class="secondary">초기화</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="title">계산 결과</h2>
+        <div class="calc-summary">
+          <div class="calc-result-grid">
+            <div class="result-card">
+              <h3>입력 면적</h3>
+              <div class="result-value" id="resultAreaText">-</div>
+              <div class="result-sub" id="resultAreaSub">-</div>
+            </div>
+            <div class="result-card">
+              <h3>필요 박스 수</h3>
+              <div class="result-value" id="resultBoxes">-</div>
+              <div class="result-sub" id="resultBoxesSub">-</div>
+            </div>
+            <div class="result-card">
+              <h3>총 금액</h3>
+              <div class="result-value" id="resultTotal">-</div>
+              <div class="result-sub" id="resultTotalVat">(VAT 포함가) -</div>
+            </div>
+          </div>
+
+          <div class="summary-list">
+            <div class="summary-row"><div class="summary-label">평당 단가</div><div id="summaryPy">-</div></div>
+            <div class="summary-row"><div class="summary-label">㎡당 단가</div><div id="summarySqm">-</div></div>
+            <div class="summary-row"><div class="summary-label">박스당 단가</div><div id="summaryBox">-</div></div>
+            <div class="summary-row"><div class="summary-label">1박스 구성</div><div id="summaryBoxMeta">-</div></div>
+            <div class="summary-row"><div class="summary-label">가격 기준</div><div id="summaryMode">-</div></div>
+            <div class="summary-row"><div class="summary-label">로스율</div><div id="summaryLoss">-</div></div>
+          </div>
+
+          <div class="minor-meta">
+            <div class="minor-meta-title">참고 정보</div>
+            <div class="minor-meta-text"><span id="summaryProduct">-</span><br><span id="summarySpec">-</span><br><span id="summaryArea">-</span></div>
+          </div>
+
+          <div class="calc-notice" id="calcNotice">
+            평수 또는 ㎡를 입력하면 필요한 박스 수와 총 금액이 자동 계산됩니다. 자재 별도 선택 시에는 자재 기준 단가로 계산됩니다.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="memoTab" class="tab-panel">
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <h2 class="title" style="margin-bottom:0;">업무 메모</h2>
+        <button type="button" id="clearMemo" style="background:#ff4d4d; color:white; border:none; border-radius:4px; padding:6px 12px; cursor:pointer; font-size:13px;">전체삭제</button>
+      </div>
+      <textarea id="workMemo" spellcheck="false" style="width:100%; min-height:200px; padding:15px; border:1px solid #ddd; border-radius:8px; font-size:15px; line-height:1.6; resize:none; box-sizing:border-box; background:#fdfdfd; overflow:hidden;" placeholder="내용을 입력하면 높이가 자동으로 늘어납니다..."></textarea>
+    </div>
+  </section>
+
+  <section id="stockTab" class="tab-panel">
+    <div class="card">
+        <h2 class="title">실시간 자재 재고 현황</h2>
+        <div class="stock-table-wrapper">
+            <table id="stockTable">
+                <thead>
+                    <tr>
+                        <th>품번</th>
+                        <th>LOT 및 입고일</th>
+                        <th>BOX</th>
+                        <th>현재고</th>
+                        <th>총 BOX</th>
+                        <th>총 재고(㎡)</th>
+                    </tr>
+                </thead>
+                <tbody id="stockTableBody">
+                    <tr>
+                        <td colspan="6" style="text-align:center; padding:30px;">
+                            재고를 가져오고 있습니다...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+  </section>
+</div>
+
+<div id="toast" class="toast">복사 완료</div>
+
+<script>
+// 전역 마스터 마루 자재 데이터 정의 (구글 시트 로드 실패 시 유지가 유지되는 임시 가이드라인 기본 구조)
+let products = [
+  { code: "BR-01", name: "바람 내추럴 오크", spec: "115 * 800 * 7.5T", sheets_per_box: 32, box_m2: 2.94, consumer: { py: 150000, sqm: 46296, box: 136110, material: 90000 }, vendor: { py: 120000, sqm: 37037, box: 108880, material: 70000 } },
+  { code: "BR-02", name: "바람 화이트 워시", spec: "115 * 800 * 7.5T", sheets_per_box: 32, box_m2: 2.94, consumer: { py: 160000, sqm: 49382, box: 145180, material: 95000 }, vendor: { py: 130000, sqm: 40123, box: 117960, material: 75000 } }
+];
+
+const templates = {
+  sample: ['안녕하세요.', '지복득마루입니다.', '', '■ 요청 서류', '- 사업자 등록증 및 명함', '', '■ 샘플 안내', '- 쪽 샘플은 영업일 기준 1~3일 내 택배로 발송됩니다.', '- 수령지가 명함과 다른 경우 [성함, 주소, 연락처]를 남겨주세요.', '- 원하시는 [제품 번호]를 기재해 주시면 발송 도와드리겠습니다.', '', '감사합니다.'].join('\n'),
+  price: ['안녕하세요.', '지복득마루입니다.', '', '■ 요청 사항', '- 사업자등록증 및 명함', '- 제품 번호 및 문의 사항', '', '위 내용을 보내주시면 확인 후', '신속히 안내 도와드리겠습니다.', '', '감사합니다.'].join('\n'),
+  vendor: ['안녕하세요.', '지복득마루입니다.', '', '■ 신규 업체 등록 안내', '원활한 업무 진행을 위해 아래 내용 전달 부탁드립니다.', '', '- 사업자등록증', '- 명함 또는 담당자 정보', '', '보내주신 내용 확인 후', '신속히 안내 도와드리겠습니다.', '', '감사합니다.'].join('\n'),
+  reserve: ['안녕하세요.', '지복득마루입니다.', '', '■ 전시장 방문 예약 안내', '아래 링크를 통해 예약 확인 부탁드립니다.', '', '▶ 예약 링크 바로가기', 'http://www.jibokdeukmaru.com/reserve', '', '감사합니다.'].join('\n'),
+  account: ['안녕하세요.', '지복득마루입니다.', '', '■ 입금 계좌 안내', '아래 계좌 정보 확인 부탁드립니다.', '', '▶ 신한은행', '▶ 140-013-942370', '▶ 예금주: ㈜지복득마루', '', '감사합니다.'].join('\n'),
+  as: ['안녕하세요.', '지복득마루입니다.', '', '■ A/S 접수 안내', '원활한 상담을 위해 아래 내용을 함께 전달 부탁드립니다.', '', '- 시공 일자', '- 현장 주소', '- 하자 및 불편 내용', '- 사진 또는 영상', '', '내용 확인 후 담당자를 배정하여', '신속하게 안내드리겠습니다.', '', '감사합니다.'].join('\n'),
+  return: ['안녕하세요.', '지복득마루입니다.', '', '■ 자재 반품 주소 안내', '아래 주소로 자재 발송(선불) 부탁드립니다.', '', '▶ 주소: 경기도 하남시 감북동 119-1', '▶ 담당: 이장원 팀장 (010-9780-9236)', '', '자재 확인 후', '반품 정산 도와드리겠습니다.', '', '감사합니다.'].join('\n')
+};
+
+/* ==========================================================================
+   전역 상태 및 유틸리티 함수 (State & Utilities)
+   ========================================================================== */
+const state = { selected: [], audience: 'consumer', priceMode: 'included', maxSelected: 10, box: false, sqm: false };
+const $ = (id) => document.getElementById(id);
+const fmt = (n) => (Number.isFinite(n) ? `${n.toLocaleString('ko-KR')}원` : '-');
+
+let toastTimer = null;
+function showToast(message = '복사 완료') { 
+  const t = $('toast'); 
+  if (!t) return; 
+  t.textContent = message; 
+  t.classList.add('show'); 
+  clearTimeout(toastTimer); 
+  toastTimer = setTimeout(() => t.classList.remove('show'), 1400); 
+}
+
+async function copyToClipboard(text) { 
+  try { 
+    await navigator.clipboard.writeText(text); 
+    showToast('복사 완료'); 
+  } catch (e) { 
+    const temp = document.createElement('textarea'); 
+    temp.value = text; 
+    temp.style.position = 'fixed'; 
+    temp.style.left = '-9999px'; 
+    document.body.appendChild(temp); 
+    temp.select(); 
+    document.execCommand('copy'); 
+    document.body.removeChild(temp); 
+    showToast('복사 완료'); 
+  } 
+}
+
+function roundTo(value, base) { return Math.round(value / base) * base; }
+function ceilTo(value, base) { return Math.ceil(value / base) * base; }
+
+function formatQuoteDate(dateObj = new Date()) { 
+  const y = dateObj.getFullYear(); 
+  const m = String(dateObj.getMonth() + 1).padStart(2, '0'); 
+  const d = String(dateObj.getDate()).padStart(2, '0'); 
+  return `견적일 : ${y}-${m}-${d}`; 
+}
+
+function updateQuoteDate(dateObj = new Date()) { 
+  const el = $('quoteDate'); 
+  if (el) el.textContent = formatQuoteDate(dateObj); 
+}
+
+function getUnitValue(product, party, unit, priceMode = state.priceMode) {
+  if (unit === 'py') return priceMode === 'material' ? product[party].material : product[party].py;
+  if (unit === 'sqm') return priceMode === 'material' ? ceilTo(product[party].material / 3.24, 100) : product[party].sqm;
+  if (unit === 'box') return product[party].box;
+  return product[party][unit];
+}
+
+function modeText() { 
+  return state.priceMode === 'material' ? '자재 금액 (VAT 별도)' : '시공비 포함 (VAT 별도)'; 
+}
+
+/* ==========================================================================
+   드롭다운 및 좌우 테이블 UI 렌더링 엔진 (UI Render Engine)
+   ========================================================================== */
+function fillSelect() {
+  const leftSel = $('productSelect');
+  const calcSel = $('calcProductSelect');
+  [leftSel, calcSel].forEach(sel => { if (sel) sel.innerHTML = ''; });
+  
+  const frag1 = document.createDocumentFragment();
+  const frag2 = document.createDocumentFragment();
+  
+  products.forEach(p => {
+    const text = `${p.code} (${p.name})`;
+    const opt1 = document.createElement('option'); opt1.value = p.code; opt1.textContent = text; frag1.appendChild(opt1);
+    const opt2 = document.createElement('option'); opt2.value = p.code; opt2.textContent = text; frag2.appendChild(opt2);
+  });
+  
+  if (leftSel) leftSel.appendChild(frag1);
+  if (calcSel) calcSel.appendChild(frag2);
+}
+
+function renderLeftTable() { 
+  const table = $('leftTable'); 
+  if (!table) return; 
+  
+  const q = ($('searchInput')?.value || '').trim().toLowerCase(); 
+  table.innerHTML = ''; 
+  
+  const frag = document.createDocumentFragment(); 
+  products.forEach(p => { 
+    const hay = `${p.code} ${p.name} ${p.spec}`.toLowerCase(); 
+    if (q && !hay.includes(q)) return; 
+    
+    const tr = document.createElement('tr'); 
+    tr.innerHTML = `
+      <td>${p.code}</td>
+      <td class="name">${p.name}</td>
+      <td class="spec-left">${p.spec}</td>
+      <td>${fmt(p.consumer.py)}</td>
+      <td>${fmt(p.vendor.py)}</td>
+      <td>${fmt(p.consumer.material)}</td>
+      <td>${fmt(p.vendor.material)}</td>
+    `; 
+    tr.addEventListener('dblclick', () => addCode(p.code)); 
+    frag.appendChild(tr); 
+  }); 
+  table.appendChild(frag); 
+}
+
+function buildRightHeader() { 
+  const row = $('rightHeaderRow'); 
+  if (!row) return; 
+  
+  const cols = []; 
+  cols.push('<th style="width:14%;">품번</th>'); 
+  cols.push('<th style="width:26%;">스펙</th>'); 
+  
+  if (state.audience === 'both') { 
+    cols.push('<th style="width:13%;">소비자가(평)</th>'); 
+    cols.push('<th style="width:13%;">업체가(평)</th>'); 
+  } else { 
+    cols.push('<th style="width:16%;">가격(평)</th>'); 
+  } 
+  
+  if (state.box) cols.push('<th style="width:18%;">박스당 단가</th>'); 
+  if (state.sqm) cols.push('<th style="width:12%;">m² 단가</th>'); 
+  
+  row.innerHTML = cols.join(''); 
+}
+
+function boxMeta(partyProduct, party) { 
+  const amount = fmt(getUnitValue(partyProduct, party, 'box')); 
+  return `<div>${amount}</div><div class="muted meta-box">${partyProduct.sheets_per_box}장 / ${partyProduct.box_m2}㎡</div>`; 
+}
+
+function renderRightTable() { 
+  const table = $('rightTable'); 
+  if (!table) return; 
+  table.innerHTML = ''; 
+  
+  const frag = document.createDocumentFragment(); 
+  const showCompany = state.audience === 'both'; 
+  
+  state.selected.forEach(code => { 
+    const p = products.find(x => x.code === code); 
+    if (!p) return; 
+    
+    const tr = document.createElement('tr'); 
+    const cells = []; 
+    
+    cells.push(`<td>${p.code}</td>`); 
+    cells.push(`<td class="spec-right">${p.spec}</td>`); 
+    
+    if (showCompany) { 
+      cells.push(`<td>${fmt(getUnitValue(p, 'consumer', 'py'))}</td>`); 
+      cells.push(`<td>${fmt(getUnitValue(p, 'vendor', 'py'))}</td>`); 
+    } else { 
+      cells.push(`<td>${fmt(getUnitValue(p, 'consumer', 'py'))}</td>`); 
+    } 
+    
+    if (state.box) { 
+      cells.push(`<td>${boxMeta(p, state.audience === 'consumer' ? 'consumer' : 'vendor')}</td>`); 
+    } 
+    if (state.sqm) { 
+      cells.push(`<td>${fmt(getUnitValue(p, state.audience === 'consumer' ? 'consumer' : 'vendor', 'sqm'))}</td>`); 
+    } 
+    
+    tr.innerHTML = cells.join(''); 
+    tr.addEventListener('dblclick', () => removeCode(p.code)); 
+    frag.appendChild(tr); 
+  }); 
+  table.appendChild(frag); 
+}
+
+function buildGuideText() { 
+  const lines = ['안녕하세요.', '단가 안내드립니다.', '']; 
+  
+  state.selected.forEach(code => { 
+    const p = products.find(x => x.code === code); 
+    if (!p) return; 
+    
+    lines.push(`품번 : ${p.code}`); 
+    lines.push(`스펙 : ${p.spec}`); 
+    
+    if (state.audience === 'both') { 
+      lines.push(`소비자가 : ${fmt(getUnitValue(p, 'consumer', 'py'))}`); 
+      lines.push(`업체가 : ${fmt(getUnitValue(p, 'vendor', 'py'))}`); 
+    } else { 
+      lines.push(`가격 : ${fmt(getUnitValue(p, 'consumer', 'py'))}`); 
+    } 
+    
+    if (state.box) { 
+      lines.push(`박스당 단가 : ${fmt(getUnitValue(p, state.audience === 'consumer' ? 'consumer' : 'vendor', 'box'))} (${p.sheets_per_box}장 / ${p.box_m2}㎡)`); 
+    } 
+    if (state.sqm) { 
+      lines.push(`m² 단가 : ${fmt(getUnitValue(p, state.audience === 'consumer' ? 'consumer' : 'vendor', 'sqm'))}`); 
+    } 
+    lines.push(''); 
+  }); 
+  
+  lines.push(`■ ${modeText()}`); 
+  if (state.priceMode === 'material') { 
+    lines.push('■ 운임비 별도'); 
+  } else { 
+    lines.push('■ 공과잡비 별도 (운임비, 양중비 등)'); 
+  } 
+  lines.push('■ 평당 단순 단가이며, 실제 견적과 차이가 있을 수 있습니다.'); 
+  return lines.join('\n'); 
+}
+
+function renderMeta() { 
+  updateQuoteDate(); 
+  $('noticeLinePrimary').textContent = modeText(); 
+  $('noticeLineSecondary').textContent = state.priceMode === 'material' ? '운임비 별도' : '공과잡비 별도 (운임비, 양중비 등)'; 
+  $('countText').textContent = `선택 ${state.selected.length} / ${state.maxSelected}`; 
+  
+  $('audienceSelect').value = state.audience; 
+  $('priceModeSelect').value = state.priceMode; 
+  $('boxCheck').checked = !!state.box; 
+  $('sqmCheck').checked = !!state.sqm; 
+  
+  const ta = $('copyText'); 
+  if (ta) ta.value = buildGuideText(); 
+}
+
+function renderAll() { 
+  renderLeftTable(); 
+  buildRightHeader(); 
+  renderRightTable(); 
+  renderMeta(); 
+}
+
+function addCode(code) { 
+  if (!code || state.selected.includes(code)) return; 
+  if (state.selected.length >= state.maxSelected) {
+    return showToast(`선택은 최대 ${state.maxSelected}개까지만 가능합니다.`); 
+  }
+  state.selected.push(code); 
+  renderAll(); 
+}
+
+function removeCode(code) { 
+  state.selected = state.selected.filter(x => x !== code); 
+  renderAll(); 
+}
+
+function resetAll() { 
+  state.selected = []; 
+  renderAll(); 
+}
+
+async function saveCapture() { 
+  const el = $('captureArea'); 
+  if (!el) return; 
+  
+  const captureNow = new Date(); 
+  updateQuoteDate(captureNow); 
+  
+  const scrollers = el.querySelectorAll('.scroll'); 
+  const prev = []; 
+  
+  el.classList.add('is-capturing'); 
+  scrollers.forEach(node => { 
+    prev.push([node, node.style.overflow, node.style.maxHeight]); 
+    node.style.overflow = 'visible'; 
+    node.style.maxHeight = 'none'; 
+  }); 
+  
+  try { 
+    const canvas = await html2canvas(el, { backgroundColor: '#ffffff', scale: 2, useCORS: true, logging: false }); 
+    const now = new Date(); 
+    const stamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`; 
+    
+    const a = document.createElement('a'); 
+    a.href = canvas.toDataURL('image/png'); 
+    a.download = `단가안내_${stamp}.png`; 
+    a.click(); 
+  } finally { 
+    prev.forEach(([node, overflow, maxHeight]) => { 
+      node.style.overflow = overflow; 
+      node.style.maxHeight = maxHeight; 
+    }); 
+    el.classList.remove('is-capturing'); 
+  } 
+}
+
+function initPreviews() { 
+  document.querySelectorAll('[data-preview]').forEach(node => { 
+    node.textContent = templates[node.dataset.preview] || ''; 
+  }); 
+}
+
+/* ==========================================================================
+   수학 계산 및 데이터 포맷팅 유틸리티 함수 (Helpers)
+   ========================================================================== */
+function formatDecimal(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return '-';
+  const rounded = Math.round(num * 100) / 100;
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(2).replace(/\.00$/, '');
+}
+
+function formatArea(py, sqm) { 
+  return `${py.toFixed(2)}평 / ${sqm.toFixed(2)}㎡`; 
+}
+
+function calcVatIncluded(amount) { 
+  return Math.round(amount * 1.1); 
+}
+
+function syncCalcInputUi() { 
+  const mode = $('calcInputModeSelect')?.value || 'py'; 
+  const label = $('calcInputLabel'); 
+  const input = $('calcAreaInput'); 
+  if (!label || !input) return; 
+
+  if (mode === 'py') {
+    label.textContent = '평수 입력'; 
+    input.placeholder = '예: 25'; 
+    input.step = '0.01'; 
+  } else if (mode === 'sqm') {
+    label.textContent = '㎡ 입력'; 
+    input.placeholder = '예: 81'; 
+    input.step = '0.01'; 
+  } else {
+    label.textContent = '박스 수 입력'; 
+    input.placeholder = '예: 10'; 
+    input.step = '1'; 
+  } 
+}
+
+function resetCalcResults() { 
+  const resultIds = [
+    'resultAreaText', 'resultAreaSub', 'resultBoxes', 'resultBoxesSub', 
+    'resultTotal', 'resultTotalVat', 'summaryProduct', 'summarySpec', 
+    'summaryPy', 'summarySqm', 'summaryBox', 'summaryBoxMeta', 
+    'summaryArea', 'summaryMode', 'summaryLoss'
+  ];
+
+  resultIds.forEach(id => { 
+    const el = $(id); 
+    if (el) {
+      el.textContent = id === 'resultTotalVat' ? '(VAT 포함가) -' : '-'; 
+    }
+  }); 
+
+  $('calcNotice').textContent = '평수, ㎡, 박스 수를 입력하면 결과가 자동으로 계산됩니다. 자재 별도 선택 시에는 박스당 단가 기준으로 계산됩니다.'; 
+}
+
+/* ==========================================================================
+   계산기 핵심 연동 엔진 (Calculator Engine)
+   ========================================================================== */
+function runCalculator() {
+  const code = $('calcProductSelect').value;
+  const party = $('calcAudienceSelect').value;
+  const priceMode = $('calcPriceModeSelect').value;
+  const inputMode = $('calcInputModeSelect').value;
+  const raw = Number(($('calcAreaInput').value || '').trim());
+  
+  const lossRateRaw = Number(($('calcLossRateInput')?.value || '').trim());
+  const lossRate = Number.isFinite(lossRateRaw) && lossRateRaw > 0 ? lossRateRaw : 0;
+  const lossMultiplier = 1 + (lossRate / 100);
+  
+  const p = products.find(x => x.code === code);
+
+  if (!p) { 
+    resetCalcResults(); 
+    return; 
+  }
+
+  if (!Number.isFinite(raw) || raw <= 0) {
+    resetCalcResults();
+    $('summaryProduct').textContent = `${p.code} / ${p.name}`;
+    $('summarySpec').textContent = p.spec;
+    $('summaryPy').textContent = fmt(getUnitValue(p, party, 'py', priceMode));
+    $('summarySqm').textContent = fmt(getUnitValue(p, party, 'sqm', priceMode));
+    $('summaryBox').textContent = fmt(getUnitValue(p, party, 'box', priceMode));
+    $('summaryBoxMeta').textContent = `${p.sheets_per_box}장 / ${p.box_m2}㎡`;
+    $('summaryMode').textContent = `${party === 'consumer' ? '소비자가' : '업체가'} / ${priceMode === 'material' ? '자재 별도' : '시공비 포함'}`;
+    $('summaryLoss').textContent = lossRate ? `${formatDecimal(lossRate)}%` : '0%';
+    $('summaryArea').textContent = '입력 전';
+    return;
+  }
+
+  const PY_FACTOR = 3.24;
+  let inputPy, inputSqm, inputBoxes;
+  let calcBoxes;
+
+  if (inputMode === 'py') {
+    inputPy = raw;
+    inputSqm = raw * PY_FACTOR;
+  } else if (inputMode === 'sqm') {
+    inputSqm = raw;
+    inputPy = raw / PY_FACTOR;
+  } else {
+    inputBoxes = Math.ceil(raw);
+    inputSqm = inputBoxes * p.box_m2;
+    inputPy = inputSqm / PY_FACTOR;
+  }
+
+  const targetSqmWithLoss = inputSqm * lossMultiplier;
+  calcBoxes = Math.ceil(targetSqmWithLoss / p.box_m2);
+  
+  const finalCoverageSqm = calcBoxes * p.box_m2;
+  const finalCoveragePy = finalCoverageSqm / PY_FACTOR;
+
+  const pyPrice = getUnitValue(p, party, 'py', priceMode);
+  const sqmPrice = getUnitValue(p, party, 'sqm', priceMode);
+  const boxPrice = getUnitValue(p, party, 'box', priceMode);
+
+  let total;
+  if (inputMode === 'py') {
+    total = Math.round(finalCoveragePy * pyPrice); 
+  } else if (inputMode === 'sqm') {
+    total = Math.round(finalCoverageSqm * sqmPrice); 
+  } else {
+    total = calcBoxes * boxPrice;
+  }
+
+  const totalVat = calcVatIncluded(total);
+  const priceLabel = `${party === 'consumer' ? '소비자가' : '업체가'} / ${priceMode === 'material' ? '자재 별도' : '시공비 포함'}`;
+
+  $('resultAreaText').textContent = inputMode === 'py' ? `${raw}평` : inputMode === 'sqm' ? `${raw}㎡` : `${inputBoxes}박스`;
+  $('resultAreaSub').textContent = inputMode === 'py' ? `(${formatDecimal(inputSqm)}㎡)` : inputMode === 'sqm' ? `(${formatDecimal(inputPy)}평)` : `(${formatDecimal(inputSqm)}㎡)`;
+  $('resultBoxes').textContent = `${calcBoxes}박스`;
+  $('resultBoxesSub').textContent = `(${formatDecimal(finalCoverageSqm)}㎡)`; 
+  $('resultTotal').textContent = fmt(total);
+  $('resultTotalVat').textContent = `(VAT 포함가) ${fmt(totalVat)}`;
+  $('summaryProduct').textContent = `${p.code} / ${p.name}`;
+  $('summarySpec').textContent = p.spec;
+  $('summaryPy').textContent = fmt(pyPrice);
+  $('summarySqm').textContent = fmt(sqmPrice);
+  $('summaryBox').textContent = fmt(boxPrice);
+  $('summaryBoxMeta').textContent = `${p.sheets_per_box}장 / ${p.box_m2}㎡`;
+  $('summaryArea').textContent = `박스 환산 면적 ${formatArea(finalCoveragePy, finalCoverageSqm)}`;
+  $('summaryMode').textContent = priceLabel;
+  $('summaryLoss').textContent = lossRate ? `${formatDecimal(lossRate)}%` : '0%';
+  $('calcNotice').textContent = `필요 수량 ${calcBoxes}박스에 맞춰 면적을 ${formatDecimal(finalCoverageSqm)}㎡로 계산했습니다.`;
+}
+
+function resetCalculator() { 
+    $('calcAudienceSelect').value = 'consumer'; 
+    $('calcPriceModeSelect').value = 'included'; 
+    $('calcInputModeSelect').value = 'py'; 
+    $('calcAreaInput').value = ''; 
+    if ($('calcLossRateInput')) $('calcLossRateInput').value = ''; 
+    syncCalcInputUi(); 
+    resetCalcResults(); 
+    runCalculator(); 
+}
+
+function runSelfTests() { 
+    if(typeof products === 'undefined' || products.length === 0) return;
+    console.assert(fmt(12000) === '12,000원', 'fmt formats'); 
+}
+
+/* ==========================================================================
+   메모장 기능 및 글로벌 레이아웃 탭 제어 엔진
+   ========================================================================== */
+const memoArea = document.getElementById('workMemo');
+const clearBtn = document.getElementById('clearMemo');
+
+const autoResize = (el) => {
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = el.scrollHeight + 'px';
+};
+
+function setTab(tabId) {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tabId);
+  });
+  document.querySelectorAll('.tab-panel').forEach(panel => {
+    panel.style.display = panel.id === tabId ? 'block' : 'none';
+  });
+  
+  if(tabId === 'memoTab' && memoArea) {
+    setTimeout(() => autoResize(memoArea), 50);
+  }
+}
+
+// [핵심] 웹 앱 전체 이벤트 리스너 바인딩 및 초기화
+function initApp() {
+    fillSelect(); 
+    initPreviews(); 
+    renderAll(); 
+    syncCalcInputUi(); 
+    resetCalcResults(); 
+    runCalculator(); 
+    runSelfTests();
+
+    $('addBtn').addEventListener('click', () => addCode($('productSelect').value));
+    $('searchInput').addEventListener('input', renderAll);
+    
+    $('audienceSelect').addEventListener('change', (e) => { state.audience = e.target.value; renderAll(); });
+    $('priceModeSelect').addEventListener('change', (e) => { state.priceMode = e.target.value; renderAll(); });
+    $('boxCheck').addEventListener('change', (e) => { state.box = e.target.checked; renderAll(); });
+    $('sqmCheck').addEventListener('change', (e) => { state.sqm = e.target.checked; renderAll(); });
+    
+    $('resetBtn').addEventListener('click', resetAll);
+    $('saveBtn').addEventListener('click', saveCapture);
+    $('copyBtn').addEventListener('click', () => copyToClipboard($('copyText').value));
+
+    ['calcProductSelect', 'calcAudienceSelect', 'calcPriceModeSelect', 'calcInputModeSelect'].forEach((id) => {
+        $(id).addEventListener('change', () => { 
+            if (id === 'calcInputModeSelect') syncCalcInputUi(); 
+            runCalculator(); 
+        });
+    });
+    
+    $('calcAreaInput').addEventListener('input', runCalculator);
+    $('calcLossRateInput').addEventListener('input', runCalculator);
+    $('calcResetBtn').addEventListener('click', resetCalculator);
+
+    document.querySelectorAll('.js-copy-template').forEach((btn) => {
+        btn.addEventListener('click', () => copyToClipboard(templates[btn.dataset.template] || ''));
+    });
+    
+    document.querySelectorAll('.tab-btn').forEach((btn) => {
+        btn.addEventListener('click', () => setTab(btn.dataset.tab));
+    });
+
+    if (memoArea) {
+        memoArea.value = localStorage.getItem('jb_memo_data') || '';
+        setTimeout(() => autoResize(memoArea), 100);
+        memoArea.addEventListener('input', () => {
+            localStorage.setItem('jb_memo_data', memoArea.value);
+            autoResize(memoArea);
+        });
+    }
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            if (confirm('메모를 모두 삭제하시겠습니까?')) {
+                memoArea.value = '';
+                localStorage.removeItem('jb_memo_data');
+                autoResize(memoArea);
+            }
+        });
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initApp);
+} else {
+    initApp();
+}
+
+/* ==========================================================================
+   [신규 추가] 단가표 구글 스프레드시트 API 연동 및 자동 갱신 모듈
+   ========================================================================== */
+(async function() {
+    const PRICING_CONFIG = {
+        ID: '1lu3P1g_CTFdofwpWITXQgGKisUoZLPdFD1mxC29wf_k', // 재고현황과 같은 통합 시트 ID
+        NAME: '단가표' // 스프레드시트 내 단가 데이터가 담긴 탭 이름
+    };
+
+    async function fetchPricingData() {
+        const url = `https://docs.google.com/spreadsheets/d/${PRICING_CONFIG.ID}/gviz/tq?tqx=out:json&headers=1&sheet=${encodeURIComponent(PRICING_CONFIG.NAME)}`;
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('네트워크 응답 오류');
+            
+            const text = await response.text();
+            const startIdx = text.indexOf('{');
+            const endIdx = text.lastIndexOf('}');
+            if (startIdx === -1 || endIdx === -1) throw new Error('JSON 반환 포맷 오류');
+            
+            const jsonData = JSON.parse(text.substring(startIdx, endIdx + 1));
+            if (jsonData.status === 'error') throw new Error('시트웹게시 누락 혹은 탭 이름 비매칭');
+
+            const rows = jsonData.table.rows;
+            if (!rows || rows.length === 0) return;
+
+            const parsedProducts = [];
+
+            rows.forEach(row => {
+                if (!row || !row.c || !row.c[0]) return;
+                
+                // A열(품번) 추출 및 제목 필터링
+                const code = String(row.c[0].v || '').trim();
+                if (!code || code === '품번') return;
+
+                // 지정해주신 A열 ~ M열 순서 그대로 인덱스(0~12) 매칭 데이터 수집 및 예외 정수화
+                const name = row.c[1]?.v ? String(row.c[1].v).trim() : '-';
+                const spec = row.c[2]?.v ? String(row.c[2].v).trim() : '-';
+                const sheets_per_box = Number(row.c[3]?.v) || 0;
+                const box_m2 = Number(row.c[4]?.v) || 0;
+
+                const consumer_py = Number(row.c[5]?.v) || 0;
+                const consumer_material = Number(row.c[6]?.v) || 0;
+                const consumer_sqm = Number(row.c[7]?.v) || 0;
+                const consumer_box = Number(row.c[8]?.v) || 0;
+
+                const vendor_py = Number(row.c[9]?.v) || 0;
+                const vendor_material = Number(row.c[10]?.v) || 0;
+                const vendor_sqm = Number(row.c[11]?.v) || 0;
+                const vendor_box = Number(row.c[12]?.v) || 0;
+
+                // 우리 시스템 내부 표준 오브젝트 구조 설계 매핑
+                parsedProducts.push({
+                    code: code,
+                    name: name,
+                    spec: spec,
+                    sheets_per_box: sheets_per_box,
+                    box_m2: box_m2,
+                    consumer: {
+                        py: consumer_py,
+                        sqm: consumer_sqm,
+                        box: consumer_box,
+                        material: consumer_material
+                    },
+                    vendor: {
+                        py: vendor_py,
+                        sqm: vendor_sqm,
+                        box: vendor_box,
+                        material: vendor_material
+                    }
+                });
+            });
+
+            // 원격 데이터 정상 파싱 완료 시 받침대용 데이터를 완전히 교체하고 UI 리프레시 실행
+            if (parsedProducts.length > 0) {
+                products = parsedProducts;
+                fillSelect();
+                renderAll();
+                runCalculator();
+                console.log('구글 시트 연동: 단가표 실시간 데이터 갱신 완료.');
+            }
+        } catch (error) {
+            console.error('단가표 원격 동기화 실패 (임시 데이터가 유지됩니다):', error);
+        }
+    }
+
+    // 페이지가 시작할 때 자동으로 단가 데이터를 백그라운드 로드함
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', fetchPricingData);
+    } else {
+        fetchPricingData();
+    }
+})();
+
+/* ==========================================================================
+   재고현황 전용 독립 샌드박스 영역 (구글 스프레드시트 API 연동)
+   ========================================================================== */
+(function() {
+    const STOCK_CONFIG = {
+        ID: '1lu3P1g_CTFdofwpWITXQgGKisUoZLPdFD1mxC29wf_k',
+        NAME: '재고현황'
+    };
+
+    async function fetchStockData() {
+        const url = `https://docs.google.com/spreadsheets/d/${STOCK_CONFIG.ID}/gviz/tq?tqx=out:json&headers=1&sheet=${encodeURIComponent(STOCK_CONFIG.NAME)}`;
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('네트워크 응답 에러');
+            
+            const text = await response.text();
+            const startIdx = text.indexOf('{');
+            const endIdx = text.lastIndexOf('}');
+            if (startIdx === -1 || endIdx === -1) throw new Error('JSON 구조 분석 실패');
+            
+            const jsonData = JSON.parse(text.substring(startIdx, endIdx + 1));
+            if (jsonData.status === 'error') throw new Error('시트이름 비매칭 혹은 웹게시 설정 오류');
+
+            renderStockTable(jsonData.table.rows);
+        } catch (error) {
+            console.error('재고 로드 실패:', error);
+            const body = document.getElementById('stockTableBody');
+            if (body) {
+                body.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="padding:25px; color:#d63031; font-weight:bold; background:#fff5f5;">
+                            시트 데이터를 읽을 수 없습니다.<br>
+                            <span style="font-size:12px; font-weight:normal; color:#777;">(원인: ${error.message})</span><br>
+                            <button type="button" id="retryStockBtn" style="margin-top:10px; padding:4px 10px; background:#111; color:#fff; border:none; border-radius:4px; cursor:pointer;">다시 시도</button>
+                        </td>
+                    </tr>
+                `;
+                const retryBtn = document.getElementById('retryStockBtn');
+                if (retryBtn) retryBtn.addEventListener('click', fetchStockData);
+            }
+        }
+    }    
+
+    function renderStockTable(rows) {
+        const tbody = document.getElementById('stockTableBody');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        if (!rows || rows.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="padding:20px; color:#777;">표에 표시할 데이터가 없습니다.</td></tr>';
+            return;
+        }
+
+        rows.forEach(row => {
+            if (!row || !row.c || !row.c[0]) return;
+            const itemCode = String(row.c[0].v || '').trim();
+            if (!itemCode || itemCode === '품번') return;
+
+            const lotInfo  = row.c[1]?.v || '-';
+            const boxSpec  = row.c[2]?.v || '-';
+            const curStock = row.c[3]?.v || 0;
+            const totalBox = Number(row.c[4]?.v) || 0;
+            const totalM2  = row.c[5]?.v || '0';
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><strong>${itemCode}</strong></td>
+                <td>${lotInfo}</td>
+                <td>${boxSpec}</td>
+                <td>${curStock}</td>
+                <td>${totalBox}</td>
+                <td>${totalM2} ㎡</td>
+            `;
+
+            tr.addEventListener('mousemove', (e) => {
+                const tooltip = document.getElementById('stockTooltip');
+                if (tooltip) {
+                    let specText = '규격 정보 없음';
+                    if (typeof products !== 'undefined') {
+                        const p = products.find(x => x.code === itemCode);
+                        if (p) specText = p.spec;
+                    }
+                    tooltip.innerHTML = `<strong>${itemCode}</strong><br>규격: ${specText}`;
+                    tooltip.style.display = 'block';
+                    tooltip.style.left = (e.pageX + 15) + 'px';
+                    tooltip.style.top = (e.pageY + 15) + 'px';
+                }
+            });
+
+            tr.addEventListener('mouseleave', () => {
+                const tooltip = document.getElementById('stockTooltip');
+                if (tooltip) tooltip.style.display = 'none';
+            });
+
+            tbody.appendChild(tr);
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (btn.dataset.tab === 'stockTab' || btn.getAttribute('data-tab') === 'stockTab') {
+                    fetchStockData();
+                }
+            });
+        });
+    });
+})();
+</script>
+
+<div id="stockTooltip" class="stock-tooltip"></div>
+
+</body>
+</html>
