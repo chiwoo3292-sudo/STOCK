@@ -3,7 +3,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=yes" />
 <title>바람 단가 안내 시스템</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@latest/dist/web/static/pretendard.css" />
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -291,14 +291,23 @@
 }
 
 function unlock() {
+    // 1. 오버레이 제거
     overlay.style.display = 'none';
     if (mainContainer) mainContainer.style.display = 'block';
-    
-    // 강제로 상단 스크롤 후 배율 초기화
-    window.scrollTo(0, 0);
-    resetScale();
-}
 
+    // 2. 화면 강제 리셋 (렌더링 꼬임 방지)
+    // 화면을 아주 살짝 줌인했다가 즉시 1.0으로 되돌려 브라우저가 계산을 다시 하게 함
+    const meta = document.querySelector('meta[name="viewport"]');
+    const originalContent = meta.content;
+    
+    meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes';
+    
+    // 3. 레이아웃 재배치 및 상단 정렬
+    window.scrollTo(0, 0);
+    
+    // 혹시라도 컨텐츠 너비가 화면을 넘치게 하는 요소가 있는지 확인하는 코드
+    document.body.style.overflowX = 'hidden'; 
+}
 
     if (sessionStorage.getItem(SESSION_KEY) === '1') {
         unlock();
