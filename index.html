@@ -319,19 +319,16 @@
 }
 
 function unlock() {
-    // 1. 오버레이 제거
-    overlay.style.display = 'none';
+    const overlay = document.getElementById('authOverlay');
+    if (overlay) overlay.style.display = 'none';
     if (mainContainer) mainContainer.style.display = 'block';
 
-    // 2. 화면 강제 리셋 (렌더링 꼬임 방지)
-    // 화면을 아주 살짝 줌인했다가 즉시 1.0으로 되돌려 브라우저가 계산을 다시 하게 함
-    const meta = document.querySelector('meta[name="viewport"]');
-    const originalContent = meta.content;
-    
-    meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes';
-    
-    // 3. 레이아웃 재배치 및 상단 정렬
-    window.scrollTo(0, 0);
+    // 렌더링 직후 무조건 최상단으로 이동
+    setTimeout(() => {
+        window.scrollTo(0, 0);
+        document.body.scrollTop = 0; 
+        document.documentElement.scrollTop = 0;
+    }, 0);
 }
 
     if (sessionStorage.getItem(SESSION_KEY) === '1') {
@@ -341,18 +338,21 @@ function unlock() {
     }
 
     function checkPassword() {
-        const val = document.getElementById('authPassword').value;
-        const errorMsg = document.getElementById('authError');
-        if (val === PASS) {
-            sessionStorage.setItem(SESSION_KEY, '1');
-            document.getElementById('authPassword').blur();
-            setTimeout(unlock, 100);
-        } else {
-            errorMsg.style.display = 'block';
-            document.getElementById('authPassword').value = '';
-            document.getElementById('authPassword').focus();
-        }
+    const pwdInput = document.getElementById('authPassword');
+    const val = pwdInput.value;
+    const errorMsg = document.getElementById('authError');
+    
+    if (val === PASS) {
+        sessionStorage.setItem(SESSION_KEY, '1');
+        pwdInput.blur(); // 포커스 해제
+        unlock();
+    } else {
+        errorMsg.style.display = 'block';
+        pwdInput.value = '';
+        // 핵심: { preventScroll: true } 추가
+        pwdInput.focus({ preventScroll: true }); 
     }
+}
 
     document.getElementById('authBtn').addEventListener('click', checkPassword);
     document.getElementById('authPassword').addEventListener('keypress', function(e) {
