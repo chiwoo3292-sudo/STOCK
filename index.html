@@ -3,7 +3,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <title>바람 단가 안내 시스템</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@latest/dist/web/static/pretendard.css" />
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -13,6 +13,8 @@
   .grid-tabs .quick-preview-trigger .secondary { width: 100%; min-height: 44px; padding: 0 4px; border: 1px solid #d8d8d8; border-radius: 8px; background: #fff; color: #444; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; text-align: center; }
   * { box-sizing:border-box; }
   body { margin:0; font-family:"Pretendard",system-ui,-apple-system,"Segoe UI","Noto Sans KR",sans-serif; background:#f5f5f5; color:#111; }
+  [spellcheck], input, textarea, td, th, select { -webkit-spellcheck: false; }
+  td, th { -webkit-user-modify: read-only; }
   .wrap { max-width:1880px; margin:0 auto; padding:10px; }
   .tabs { display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; }
   .tab-btn { min-height:40px; padding:0 16px; border:1px solid #d8d8d8; border-radius:999px; background:#fff; color:#444; font-size:13px; font-weight:700; cursor:pointer; }
@@ -34,6 +36,7 @@
   th, td { padding:9px 10px; border-bottom:1px solid #eee; text-align:left; vertical-align:top; font-size:13px; line-height:1.45; }
   th { background:#fafafa; color:#444; font-size:12px; position:sticky; top:0; z-index:1; }
   td.name, td.spec-left, td.spec-right { white-space:nowrap; }
+  td.price { white-space:nowrap; }
   .muted { color:#777; font-size:12px; }
 .notice { margin-top:4px; font-size:11px; color:#555; line-height:1.3; }
 .notice ul { margin:2px 0 0 14px; padding:0; }
@@ -197,8 +200,8 @@
     }
 
     /* 5. 텍스트가 절대 잘리지 않아야 하는 중요한 규격/이름 칸 안전장치 */
-    td.name, td.spec-left, td.spec-right {
-        white-space: nowrap !important; /* 줄바꿈되어 깨지지 않고 가로로 유지 */
+    td.name, td.spec-left, td.spec-right, td.price {
+        white-space: nowrap !important;
     }
 
     /* 6. 모바일 복사 버튼이나 링크들이 있는 구역 정렬 */
@@ -226,40 +229,90 @@
 
 </style>
 </head>
-<body>
+<body spellcheck="false">
 
-<div id="authOverlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f5f5f5; z-index: 99999; display: flex; align-items: center; justify-content: center; font-family: sans-serif; padding: 20px;">
-    <div style="background: #fff; padding: 24px; border-radius: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; max-width: 340px; width: 100%; box-sizing: border-box;">
+<style>
+#authOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #f5f5f5;
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0; /* padding 제거 */
+    margin: 0;
+}
+.auth-card {
+    background: #fff;
+    padding: 32px 24px;
+    border-radius: 18px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    text-align: center;
+    width: 90%; /* 100% 대신 90%로 여백 확보 */
+    max-width: 340px;
+}
+
+</style>
+<div id="authOverlay">
+    <div class="auth-card">
         <h2 style="margin: 0 0 10px; font-size: 20px; color: #111; font-weight: 700;">시스템 잠금</h2>
         <p style="margin: 0 0 20px; font-size: 13px; color: #666;">프로그램을 이용하려면 비밀번호를 입력하세요.</p>
-        
-        <input type="password" id="authPassword" placeholder="비밀번호 입력" 
-               style="width: 100%; height: 44px; padding: 0 12px; font-size: 16px; border: 1px solid #ddd; border-radius: 12px; box-sizing: border-box; text-align: center; margin-bottom: 14px; -webkit-text-security: disc;">
-        
-        <button id="authBtn" style="width: 100%; height: 44px; background: #111; color: #fff; border: none; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer;">확인</button>
-        <p id="authError" style="margin: 10px 0 0; font-size: 12px; color: #d63031; display: none; font-weight: bold;">❌ 비밀번호가 올바르지 않습니다.</p>
+        <input type="password" id="authPassword" placeholder="비밀번호 입력"
+               style="width:100%; height:48px; padding:0 12px; font-size:16px; border:1px solid #ddd; border-radius:12px; box-sizing:border-box; text-align:center; margin-bottom:14px;">
+        <button id="authBtn" style="width:100%; height:48px; background:#111; color:#fff; border:none; border-radius:12px; font-size:16px; font-weight:700; cursor:pointer;">확인</button>
+        <p id="authError" style="margin:10px 0 0; font-size:12px; color:#d63031; display:none; font-weight:bold;">❌ 비밀번호가 올바르지 않습니다.</p>
     </div>
 </div>
 
 <script>
 (function() {
-    // [핵심 수정] 사용자님 파일의 진짜 메인 박스인 .container를 찾아 숨깁니다.
+    const PASS = '7736';
+    const SESSION_KEY = 'baram_auth';
     const mainContainer = document.querySelector('.wrap');
-    if (mainContainer) {
-        mainContainer.style.display = 'none';
+    const overlay = document.getElementById('authOverlay');
+
+    // iOS 줌인 해제: scale을 0.1로 찍었다가 1.0으로 복구하면 Safari가 재계산
+
+    function resetScale() {
+    const meta = document.querySelector('meta[name="viewport"]');
+    if (!meta) return;
+    
+    // 1. 화면을 아주 작게 줄여서 브라우저가 줌 배율을 재계산하게 함
+    meta.content = 'width=device-width, initial-scale=0.1, maximum-scale=1.0, user-scalable=no';
+    
+    // 2. 아주 짧은 지연 후 정상 배율로 복귀
+    setTimeout(() => {
+        meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+    }, 50);
+}
+
+function unlock() {
+    overlay.style.display = 'none';
+    if (mainContainer) mainContainer.style.display = 'block';
+    
+    // 강제로 상단 스크롤 후 배율 초기화
+    window.scrollTo(0, 0);
+    resetScale();
+}
+
+
+    if (sessionStorage.getItem(SESSION_KEY) === '1') {
+        unlock();
+    } else {
+        if (mainContainer) mainContainer.style.display = 'none';
     }
 
     function checkPassword() {
-        const passwordInput = document.getElementById('authPassword').value;
+        const val = document.getElementById('authPassword').value;
         const errorMsg = document.getElementById('authError');
-        const overlay = document.getElementById('authOverlay');
-
-        // 입력한 숫자가 '7736'인지 곧바로 확인합니다.
-        if (passwordInput === '7736') {
-            overlay.style.display = 'none';
-            if (mainContainer) {
-                mainContainer.style.display = 'block'; // 본 화면 활성화
-            }
+        if (val === PASS) {
+            sessionStorage.setItem(SESSION_KEY, '1');
+            document.getElementById('authPassword').blur();
+            setTimeout(unlock, 100);
         } else {
             errorMsg.style.display = 'block';
             document.getElementById('authPassword').value = '';
@@ -267,25 +320,16 @@
         }
     }
 
-    // 버튼 클릭 및 엔터키 입력 이벤트 처리
     document.getElementById('authBtn').addEventListener('click', checkPassword);
     document.getElementById('authPassword').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            checkPassword();
-        }
+        if (e.key === 'Enter') checkPassword();
     });
 
-    /* ==========================================
-       🚫 기본적인 외부인 접근 제어 (우클릭 및 키 차단)
-       ========================================== */
     document.addEventListener('contextmenu', e => e.preventDefault());
-
     document.addEventListener('keydown', function(e) {
-        if (
-            e.key === 'F12' || 
-            (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) || 
-            (e.ctrlKey && e.key === 'U')
-        ) {
+        if (e.key === 'F12' ||
+            (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) ||
+            (e.ctrlKey && e.key === 'U')) {
             e.preventDefault();
             return false;
         }
@@ -745,7 +789,24 @@ function fillSelect() {
   if(leftSel) leftSel.appendChild(frag1);
   if(calcSel) calcSel.appendChild(frag2);
 }
-function renderLeftTable() { const table=$('leftTable'); if(!table) return; const q=($('searchInput')?.value || '').trim().toLowerCase(); table.innerHTML=''; const frag=document.createDocumentFragment(); products.forEach(p=>{ const hay=`${p.code} ${p.name} ${p.spec}`.toLowerCase(); if(q && !hay.includes(q)) return; const tr=document.createElement('tr'); tr.innerHTML=`<td>${p.code}</td><td class="name">${p.name}</td><td class="spec-left">${p.spec}</td><td>${fmt(p.consumer.py)}</td><td>${fmt(p.vendor.py)}</td><td>${fmt(p.consumer.material)}</td><td>${fmt(p.vendor.material)}</td>`; tr.addEventListener('dblclick',()=>addCode(p.code)); frag.appendChild(tr); }); table.appendChild(frag); }
+function renderLeftTable() {
+  const table=$('leftTable'); if(!table) return;
+  const q=($('searchInput')?.value || '').trim().toLowerCase();
+  table.innerHTML='';
+  const frag=document.createDocumentFragment();
+  products.forEach(p=>{
+    const hay=`${p.code} ${p.name} ${p.spec}`.toLowerCase();
+    if(q && !hay.includes(q)) return;
+    const tr=document.createElement('tr');
+    const isNatural = tooltipMap && tooltipMap[p.code.toUpperCase()]?.natural;
+    if (isNatural) tr.style.cssText = 'background:#fffbeb; border-left:3px solid #f59e0b;';
+    const naturalBadge = '';
+    tr.innerHTML=`<td>${p.code}</td><td class="name">${p.name}</td><td class="spec-left">${p.spec}</td><td class="price">${fmt(p.consumer.py)}</td><td class="price">${fmt(p.vendor.py)}</td><td class="price">${fmt(p.consumer.material)}</td><td class="price">${fmt(p.vendor.material)}</td>`;
+    tr.addEventListener('dblclick',()=>addCode(p.code));
+    frag.appendChild(tr);
+  });
+  table.appendChild(frag);
+}
 function buildRightHeader() { const row=$('rightHeaderRow'); if(!row) return; const cols=[]; cols.push('<th style="width:14%;">품번</th>'); cols.push('<th style="width:26%;">스펙</th>'); if (state.audience === 'both') { cols.push('<th style="width:13%;">소비자가(평)</th>'); cols.push('<th style="width:13%;">업체가(평)</th>'); } else { cols.push('<th style="width:16%;">가격(평)</th>'); } if (state.box) cols.push('<th style="width:18%;">박스당 단가</th>'); if (state.sqm) cols.push('<th style="width:12%;">m² 단가</th>'); row.innerHTML=cols.join(''); }
 function boxMeta(partyProduct, party) { const amount = fmt(getUnitValue(partyProduct, party, 'box')); return `<div>${amount}</div><div class="muted meta-box">${partyProduct.sheets_per_box}장 / ${partyProduct.box_m2}㎡</div>`; }
 function renderRightTable() { const table=$('rightTable'); if(!table) return; table.innerHTML=''; const frag=document.createDocumentFragment(); const showCompany = state.audience === 'both'; state.selected.forEach(code=>{ const p=products.find(x=>x.code===code); if(!p) return; const tr=document.createElement('tr'); const cells=[]; cells.push(`<td>${p.code}</td>`); cells.push(`<td class="spec-right">${p.spec}</td>`); if (showCompany) { cells.push(`<td>${fmt(getUnitValue(p,'consumer','py'))}</td>`); cells.push(`<td>${fmt(getUnitValue(p,'vendor','py'))}</td>`); } else { cells.push(`<td>${fmt(getUnitValue(p,'consumer','py'))}</td>`); } if (state.box) { cells.push(`<td>${boxMeta(p, state.audience === 'consumer' ? 'consumer' : 'vendor')}</td>`); } if (state.sqm) { cells.push(`<td>${fmt(getUnitValue(p, state.audience === 'consumer' ? 'consumer' : 'vendor', 'sqm'))}</td>`); } tr.innerHTML=cells.join(''); tr.addEventListener('dblclick',()=>removeCode(p.code)); frag.appendChild(tr); }); table.appendChild(frag); }
@@ -890,10 +951,9 @@ function initApp() {
 // PRICE 시트에서 products 로드 후 앱 초기화
 async function startApp() {
     try {
-        await loadProducts();
+        await Promise.all([loadProducts(), loadTooltipMap()]);
     } catch (e) {
-        console.error('단가 데이터 로드 실패:', e.message);
-        // 로드 실패 시에도 UI는 띄움 (products = [] 상태)
+        console.error('데이터 로드 실패:', e.message);
     }
     initApp();
 }
@@ -988,8 +1048,9 @@ async function loadTooltipMap() {
             const code = getCellVal(row.c[0]);
             if (!code || code === '품번') return;
             tooltipMap[code.toUpperCase()] = {
-                name: getCellVal(row.c[1]),
-                spec: getCellVal(row.c[2])
+                name:    getCellVal(row.c[1]),
+                spec:    getCellVal(row.c[2]),
+                natural: getCellVal(row.c[3]).toUpperCase() === 'Y'   // D열: 네츄럴 여부
             };
         });
     } catch (e) {
