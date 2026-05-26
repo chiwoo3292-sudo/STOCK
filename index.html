@@ -629,16 +629,17 @@ function unlock() {
         });
 
         // 3. 상단 탭 버튼 클릭하여 메모장 켜질 때 스크롤 초기 세팅
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                setTimeout(() => {
-                    if (btn.getAttribute('data-tab') === 'memoTab') {
-                        // 켜지는 순간 강제 아래 튕김을 막고 제일 마지막 작성 위치로 스크롤 이동
-                        memoArea.scrollTop = memoArea.scrollHeight;
-                    }
-                }, 50);
-            });
-        });
+      // 3. 상단 탭 버튼 클릭하여 메모장 켜질 때 스크롤 초기 세팅
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        setTimeout(() => {
+            if (btn.getAttribute('data-tab') === 'memoTab') {
+                // 강제 스크롤 이동 로직을 제거하여 기존 스크롤 위치 유지
+                // 필요하다면 memoArea.scrollTop = 0; 으로 변경하여 항상 상단에 위치하게 할 수 있습니다.
+            }
+        }, 50);
+    });
+});
 
         // 전체 삭제 기능 연동
         const clearBtn = document.getElementById('clearMemo');
