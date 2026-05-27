@@ -1231,6 +1231,21 @@ function initExcelUpload() {
                 return row.length > col ? row[col] : undefined;
             }
 
+            function fillMergedItemCodes(ws, rows, itemCol) {
+                const merges = ws['!merges'] || [];
+                merges.forEach(range => {
+                    if (range.s.c > itemCol || range.e.c < itemCol) return;
+                    const sourceRow = range.s.r;
+                    const sourceVal = getCell(rows[sourceRow] || [], itemCol);
+                    if (!hasValue(sourceVal)) return;
+
+                    for (let r = range.s.r; r <= range.e.r; r++) {
+                        if (!rows[r]) rows[r] = [];
+                        if (!hasValue(rows[r][itemCol])) rows[r][itemCol] = sourceVal;
+                    }
+                });
+            }
+
             function hasValue(v) {
                 return v !== null && v !== undefined && v !== '';
             }
@@ -1249,6 +1264,7 @@ function initExcelUpload() {
 
                 const cm = COL_MAP[sheetName];
                 if (!cm) return;
+                fillMergedItemCodes(ws, rows, cm.itemCol);
 
                 let currentItemCode = '';
                 let i = 4; // 앞 4행 스킵
