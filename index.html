@@ -1197,7 +1197,7 @@ function initExcelUpload() {
 
             workbook.SheetNames.forEach(sheetName => {
                 const ws = workbook.Sheets[sheetName];
-                const rows = XLSX.utils.sheet_to_array(ws, { defval: '' });
+                const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
                 if (!rows || rows.length === 0) return;
 
                 // 시트 구분 헤더 삽입
