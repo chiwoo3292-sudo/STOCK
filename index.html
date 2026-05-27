@@ -1250,58 +1250,63 @@ function initExcelUpload() {
                 const cm = COL_MAP[sheetName];
                 if (!cm) return; // 매핑 없는 시트 스킵
 
-               let currentItemCode = '';
-                let tempCha = ''; // [변경] 5행의 차수 정보를 담을 변수
+                let currentItemCode = '';
 
                 rowsRaw.forEach((row, i) => {
-                    // 앞 4행 스킵 (헤더)
+                    // 앞 4행 스킵 (타이틀/헤더)
                     if (i < 4) return;
 
-                    const col0 = String(row[0] || '').trim();   
-                    const col1 = row[cm.lotCol];                
-                    const boxVal  = row[cm.boxCol];             
-                    const m2Val   = row[cm.m2Col];              
-                    const totalBox = row[cm.totalBoxCol];       
-                    const totalM2  = row[cm.totalM2Col];        
+                    const col0 = String(row[0] || '').trim();   // 품번/수종
+                    const col1 = row[cm.lotCol];                 // LOT/차수
+                    const boxVal  = row[cm.boxCol];              // BOX 수량
+                    const m2Val   = row[cm.m2Col];               // 현재고㎡
+                    const totalBox = row[cm.totalBoxCol];        // 총BOX
+                    const totalM2  = row[cm.totalM2Col];         // 총재고㎡
 
-                    // 1. 품번 추출
+                    // 보조행 스킵: A열 비어있고 BOX열도 비어있는 행 (입고날짜+단가 행)
+                    const boxEmpty = boxVal === '' || boxVal === null || boxVal === undefined;
+                    if (!col0 && boxEmpty) return;
+
+                    // 헤더/타이틀 행 스킵
+                    if (col0 === '수종' || col0 === '시리즈') return;
+                    if (col0.includes('재고사항') || col0.includes('재고사황') || col0.includes('재고상황')) return;
+                    if (col0.includes('시리즈') && !col0.match(/[A-Z]#\d/)) return;
+                    if (col0 === 'NEW' || col0 === '') {
+                        if (boxEmpty) return;
+                    }
+
+                    // 품번 추출 (색상명 앞에 붙는 경우 처리: "스모크오크C#1801" → "C#1801")
+                    let itemCode = '';
                     const codeMatch = col0.match(/[A-Z]#\s*\d+\w*/);
                     if (codeMatch) {
-                        currentItemCode = codeMatch[0].replace(/\s+/g, '');
-                    } else if (col0 && col0 !== 'NEW' && col0 !== '수종' && !col0.includes('시리즈')) {
-                        currentItemCode = col0;
+                        itemCode = codeMatch[0].replace(/\s+/g, '');
+                    } else if (col0 && col0 !== 'NEW') {
+                        itemCode = col0;
                     }
+                    if (itemCode) currentItemCode = itemCode;
                     if (!currentItemCode) return;
 
-                    // 2. 5행(차수)과 6행(날짜) 병합 로직
-                    // i가 홀수이면 5행(차수), 짝수이면 6행(날짜)으로 가정
-                    if (i % 2 !== 0) {
-                        // [5행 처리] 차수 저장
-                        tempCha = String(col1 || '').trim();
-                        return; // 여기서 끝내고 다음 루프로 (데이터 행 push 안 함)
-                    } else {
-                        // [6행 처리] 저장된 차수 + 현재 행의 날짜 병합
-                        const dateStr = (col1 !== '' && col1 !== null) ? excelDateToStr(col1) : '-';
-                        const finalLotInfo = tempCha ? `${tempCha} (${dateStr})` : dateStr;
+                    // LOT/차수 텍스트 처리
+                    const lotStr = col1 !== '' && col1 !== null && col1 !== undefined
+                        ? excelDateToStr(col1)
+                        : '-';
 
-                        // 3. 데이터가 있을 때만 push
-                        if (boxVal !== '' && boxVal !== null && boxVal !== undefined) {
-                            const box    = typeof boxVal  === 'number' ? boxVal  : (parseFloat(boxVal)  || 0);
-                            const curM2  = typeof m2Val   === 'number' ? roundNum(m2Val)  : (m2Val  || '-');
-                            const totBox = typeof totalBox === 'number' ? roundNum(totalBox) : (totalBox || '-');
-                            const totM2  = typeof totalM2  === 'number' ? roundNum(totalM2)  : (totalM2  || '-');
+                    // BOX, 현재고㎡ 수치
+                    const box  = typeof boxVal  === 'number' ? boxVal  : (parseFloat(boxVal)  || 0);
+                    const curM2 = typeof m2Val  === 'number' ? roundNum(m2Val)  : (m2Val  || '-');
+                    const totBox = typeof totalBox === 'number' ? roundNum(totalBox) : (totalBox || '-');
+                    const totM2  = typeof totalM2  === 'number' ? roundNum(totalM2)  : (totalM2  || '-');
 
-                            matrixData.push([
-                                currentItemCode,
-                                finalLotInfo, // 합쳐진 결과값
-                                box,
-                                curM2,
-                                totBox,
-                                totM2
-                            ]);
-                        }
-                    }
+                    matrixData.push([
+                        itemCode || currentItemCode,
+                        lotStr,
+                        box,
+                        curM2,
+                        totBox,
+                        totM2
+                    ]);
                 });
+            });
 
             if (matrixData.length <= 1) throw new Error('엑셀에서 읽을 데이터가 없습니다.');
 
@@ -1421,13 +1426,19 @@ function renderStockTable(rows) {
     let lastSeenItemCode = '';
     let isGrayGroup = false;
 
-    processedRows.forEach(d => {
-        let displayItemCode = '';
-        if (d.itemCode !== lastSeenItemCode) {
-            isGrayGroup = !isGrayGroup;
-            lastSeenItemCode = d.itemCode;
-            displayItemCode = `<strong>${d.itemCode}</strong>`;
+
+// 1. itemCode 기준으로 데이터를 그룹화하고 lotInfo를 배열로 합칩니다.
+    const grouped = processedRows.reduce((acc, cur) => {
+        if (!acc[cur.itemCode]) {
+            acc[cur.itemCode] = { ...cur, lotInfos: [] };
         }
+        acc[cur.itemCode].lotInfos.push(cur.lotInfo);
+        return acc;
+    }, {});
+
+    // 2. 그룹화된 데이터를 순회하며 테이블 행 생성
+    Object.values(grouped).forEach(d => {
+        isGrayGroup = !isGrayGroup; // 스타일 교차 적용
 
         const tr = document.createElement('tr');
         tr.className = isGrayGroup ? 'bg-group-gray' : 'bg-group-white';
@@ -1442,20 +1453,17 @@ function renderStockTable(rows) {
             : d.totalBox;
 
         tr.innerHTML = `
-            <td style="text-align:center;">${displayItemCode}</td>
-            <td style="text-align:center;">${d.lotInfo}</td>
+            <td style="text-align:center;"><strong>${d.itemCode}</strong></td>
+            <td style="text-align:center;">${d.lotInfos.join(', ')}</td>
             <td style="text-align:center;">${d.boxSpec}</td>
             <td style="text-align:center;">${d.curStock}</td>
             <td style="text-align:center;">${totalBoxDisplay}</td>
             <td style="text-align:center;">${m2Display}</td>
         `;
 
-        // 툴팁 — TOOLTIP 시트 기반
         tr.addEventListener('mousemove', async (e) => {
             const tooltip = document.getElementById('stockTooltip');
             if (!tooltip) return;
-
-            // tooltipMap 아직 안 로드됐으면 로드 후 재시도
             if (!tooltipMap) await loadTooltipMap();
 
             const key = d.itemCode.trim().toUpperCase();
@@ -1470,7 +1478,6 @@ function renderStockTable(rows) {
             } else {
                 tooltip.innerHTML = `<strong>[${d.itemCode}]</strong><br>정보 없음`;
             }
-
             tooltip.style.cssText = `display:block;left:${e.pageX + 15}px;top:${e.pageY + 15}px;`;
         });
 
@@ -1481,7 +1488,9 @@ function renderStockTable(rows) {
 
         tbody.appendChild(tr);
     });
-}
+
+
+    }
 
 // 재고 탭 클릭 시 데이터 로드 + 시계 + 업로드 초기화
 document.addEventListener('DOMContentLoaded', () => {
