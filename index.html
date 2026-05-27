@@ -1217,71 +1217,50 @@ function initExcelUpload() {
 
                 let currentItemCode = '';
 
+               let currentItemCode = '';
+                let lastLot = ''; // [추가] LOT 정보를 기억할 변수
+
                 rows.forEach((row, i) => {
-                    // 앞 4행(타이틀/헤더) 스킵
                     if (i < 4) return;
 
-                    const raw0 = String(row[0] || '').trim(); // 수종/품번
-                    const raw1 = row[1];                       // 입고날짜
+                    const raw0 = String(row[0] || '').trim(); // 품번
+                    const raw1 = row[1];                      // 입고날짜(혹은 LOT)
                     const raw2 = String(row[2] || '').trim(); // 규격
-                    const raw3 = row[3];                       // BOX(현재고)
+                    const raw3 = row[3];                      // BOX
 
                     // 마지막 두 열: 총BOX, 총재고㎡
                     const lastIdx = row.length - 1;
                     const totalM2  = row[lastIdx];
                     const totalBox = row[lastIdx - 1];
 
-                    // 완전 빈 행 스킵
-                    if (!raw0 && !raw1 && !raw2 && (raw3 === '' || raw3 === null || raw3 === undefined)) return;
-
-                    // 헤더/타이틀 행 스킵
+                    // 1. 헤더/타이틀 행 스킵 및 품번 추출
                     if (raw0 === '수종' || String(raw1) === '입고날짜') return;
-                    if (raw0.includes('재고사항') || raw0.includes('재고사황') || raw0.includes('재고상황')) return;
-                    if (raw0.includes('시리즈') && !raw0.match(/[A-Z]#\d/)) return;
-
-                    // 품번 추출 (앞에 색상명이 붙는 경우 처리: "스모크  오크C#1801" → "C#1801")
-                    let itemCode = '';
+                    
                     const codeMatch = raw0.match(/[A-Z]#\s*\d+[\w]*/);
-                    if (codeMatch) {
-                        itemCode = codeMatch[0].replace(/\s+/g, '');
-                    } else if (raw0 && !raw0.includes('NEW') && raw0 !== '') {
-                        itemCode = raw0;
+                    if (codeMatch) currentItemCode = codeMatch[0].replace(/\s+/g, '');
+                    
+                    // 2. LOT 정보가 발견되면 기억하기 (위쪽 행)
+                    if (raw1 && String(raw1).length > 3) {
+                        lastLot = String(raw1);
                     }
 
-                    if (itemCode) currentItemCode = itemCode;
-                    if (!currentItemCode) return;
-
-                    // 입고날짜 처리
-                    let lotInfo = '';
-                    if (typeof raw1 === 'number' && raw1 > 40000) {
-                        lotInfo = excelDateToStr(raw1);
-                    } else {
-                        lotInfo = String(raw1 || '').trim();
-                    }
-
-                    // 규격 없고 BOX도 없으면 스킵
+                    // 3. 실제 데이터 행인지 확인 (규격이나 BOX가 있어야 함)
                     if (!raw2 && (raw3 === '' || raw3 === null || raw3 === undefined)) return;
 
-                    // BOX 수치
+                    // 4. 데이터 생성
                     const boxVal = typeof raw3 === 'number' ? raw3 : parseFloat(raw3) || 0;
-
-                    // 총BOX, 총재고㎡ — 숫자면 소수점 2자리
                     const totalBoxVal = typeof totalBox === 'number' ? Math.round(totalBox * 100) / 100 : (totalBox || '');
                     const totalM2Val  = typeof totalM2  === 'number' ? Math.round(totalM2  * 100) / 100 : (totalM2  || '');
 
-                    // LOT정보에 차수 있고 입고날짜 별도 행이면 합치기
-                    const lotDisplay = lotInfo ? (raw2 ? `${lotInfo}` : lotInfo) : '-';
-
                     matrixData.push([
-                        itemCode || currentItemCode,
-                        lotDisplay || '-',
+                        currentItemCode,
+                        lastLot, // [수정] 기억해둔 LOT 정보를 넣음
                         raw2 || '-',
                         boxVal,
                         totalBoxVal !== '' ? totalBoxVal : '-',
                         totalM2Val  !== '' ? totalM2Val  : '-'
                     ]);
                 });
-            });
 
             if (matrixData.length <= 1) throw new Error('엑셀에서 읽을 데이터가 없습니다.');
 
@@ -1333,26 +1312,6 @@ function initExcelUpload() {
     });
 }
 
-// ============================================================
-//  재고현황 (STOCK 시트) — 단일 정의
-// ============================================================
-async function fetchStockData() {
-    const tbody = document.getElementById('stockTableBody');
-    if (!tbody) return;
-    tbody.innerHTML = `<tr><td colspan="6" style="padding:20px;text-align:center;color:#888;">데이터를 불러오는 중...</td></tr>`;
-
-    try {
-        // 재고 + 툴팁 병렬 로드
-        await Promise.all([
-            fetchSheetJson(SHEET_CONFIG.STOCK).then(rows => renderStockTable(rows)),
-            loadTooltipMap()
-        ]);
-    } catch (error) {
-        console.error('재고 로드 실패:', error);
-        tbody.innerHTML = `<tr><td colspan="6" style="padding:25px;color:#d63031;font-weight:bold;text-align:center;">
-            시트 데이터를 읽을 수 없습니다. (원인: ${error.message})</td></tr>`;
-    }
-}
 
 function renderStockTable(rows) {
     const tbody = document.getElementById('stockTableBody');
