@@ -1250,56 +1250,58 @@ function initExcelUpload() {
                 const cm = COL_MAP[sheetName];
                 if (!cm) return; // 매핑 없는 시트 스킵
 
-                // (기존 변수 선언부 아래)
-                let currentItemCode = '';
-                let lastLot = ''; // [추가] LOT 정보를 기억할 변수
+               let currentItemCode = '';
+                let tempCha = ''; // [변경] 5행의 차수 정보를 담을 변수
 
                 rowsRaw.forEach((row, i) => {
+                    // 앞 4행 스킵 (헤더)
                     if (i < 4) return;
 
-                    const col0 = String(row[0] || '').trim();   // 품번
-                    const col1 = row[cm.lotCol];               // LOT/차수
-                    const boxVal  = row[cm.boxCol];             // BOX
-                    const m2Val   = row[cm.m2Col];              // 현재고
-                    const totalBox = row[cm.totalBoxCol];       // 총BOX
-                    const totalM2  = row[cm.totalM2Col];        // 총재고
+                    const col0 = String(row[0] || '').trim();   
+                    const col1 = row[cm.lotCol];                
+                    const boxVal  = row[cm.boxCol];             
+                    const m2Val   = row[cm.m2Col];              
+                    const totalBox = row[cm.totalBoxCol];       
+                    const totalM2  = row[cm.totalM2Col];        
 
-                    // 1. 품번 추출 및 갱신
+                    // 1. 품번 추출
                     const codeMatch = col0.match(/[A-Z]#\s*\d+\w*/);
                     if (codeMatch) {
                         currentItemCode = codeMatch[0].replace(/\s+/g, '');
                     } else if (col0 && col0 !== 'NEW' && col0 !== '수종' && !col0.includes('시리즈')) {
-                        // 품번이 비어있지 않을 때만 갱신
                         currentItemCode = col0;
                     }
+                    if (!currentItemCode) return;
 
-                    // 2. LOT 정보가 발견되면 'lastLot'에 기억해둠
-                    // LOT 정보가 있고, 앞뒤 공백을 제외하고 유효한 값이면 저장
-                    if (col1 !== '' && col1 !== null && col1 !== undefined) {
-                        const lotStr = excelDateToStr(col1);
-                        if (lotStr !== '-') lastLot = lotStr;
+                    // 2. 5행(차수)과 6행(날짜) 병합 로직
+                    // i가 홀수이면 5행(차수), 짝수이면 6행(날짜)으로 가정
+                    if (i % 2 !== 0) {
+                        // [5행 처리] 차수 저장
+                        tempCha = String(col1 || '').trim();
+                        return; // 여기서 끝내고 다음 루프로 (데이터 행 push 안 함)
+                    } else {
+                        // [6행 처리] 저장된 차수 + 현재 행의 날짜 병합
+                        const dateStr = (col1 !== '' && col1 !== null) ? excelDateToStr(col1) : '-';
+                        const finalLotInfo = tempCha ? `${tempCha} (${dateStr})` : dateStr;
+
+                        // 3. 데이터가 있을 때만 push
+                        if (boxVal !== '' && boxVal !== null && boxVal !== undefined) {
+                            const box    = typeof boxVal  === 'number' ? boxVal  : (parseFloat(boxVal)  || 0);
+                            const curM2  = typeof m2Val   === 'number' ? roundNum(m2Val)  : (m2Val  || '-');
+                            const totBox = typeof totalBox === 'number' ? roundNum(totalBox) : (totalBox || '-');
+                            const totM2  = typeof totalM2  === 'number' ? roundNum(totalM2)  : (totalM2  || '-');
+
+                            matrixData.push([
+                                currentItemCode,
+                                finalLotInfo, // 합쳐진 결과값
+                                box,
+                                curM2,
+                                totBox,
+                                totM2
+                            ]);
+                        }
                     }
-
-                    // 3. 데이터 행(BOX 등 수치가 있는 행)인지 확인
-                    const boxEmpty = (boxVal === '' || boxVal === null || boxVal === undefined);
-                    if (boxEmpty) return; // 데이터가 없는 행은 건너뜀
-
-                    // 4. 데이터 생성 (기억해둔 lastLot 사용)
-                    const box    = typeof boxVal  === 'number' ? boxVal  : (parseFloat(boxVal)  || 0);
-                    const curM2  = typeof m2Val   === 'number' ? roundNum(m2Val)  : (m2Val  || '-');
-                    const totBox = typeof totalBox === 'number' ? roundNum(totalBox) : (totalBox || '-');
-                    const totM2  = typeof totalM2  === 'number' ? roundNum(totalM2)  : (totalM2  || '-');
-
-                    matrixData.push([
-                        currentItemCode,
-                        lastLot || '-', // [수정] 기억해둔 LOT 사용
-                        box,
-                        curM2,
-                        totBox,
-                        totM2
-                    ]);
                 });
-            });
 
             if (matrixData.length <= 1) throw new Error('엑셀에서 읽을 데이터가 없습니다.');
 
