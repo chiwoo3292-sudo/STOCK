@@ -1193,31 +1193,64 @@ function initExcelUpload() {
             const workbook = XLSX.read(arrayBuffer, { type: 'array' });
 
             // 2. 모든 시트를 STOCK 형식으로 정제해서 합치기
-            // 출력 형식: [품번, LOT및입고일, BOX규격, 현재고BOX, 총BOX, 총재고㎡]
+            // 출력 형식: [품번, LOT및입고일, BOX, 현재고(㎡), 총BOX, 총재고(㎡)]
             const matrixData = [];
-            // 헤더
-            matrixData.push(['품번', 'LOT 및 입고일', 'BOX', '현재고', '총 BOX', '총 재고(㎡)']);
+            matrixData.push(['품번', 'LOT 및 입고일', 'BOX', '현재고(㎡)', '총 BOX', '총 재고(㎡)']);
 
-            // 엑셀 날짜 시리얼 → 문자열 변환
-            function excelDateToStr(serial) {
+            // 시트별 컬럼 매핑 (0-based 인덱스)
+            // 기본 시트: 품번A(0) LOT/차수B(1) 규격C(2) BOX D(3) 현재고㎡E(4) ... 총BOXP~ 총재고㎡Q~
+            // 특수 시트(D#,바람1): 품번A(0) LOT B(1) [빈칸or파스 C(2)] 규격D(3) BOX E(4) 현재고㎡F(5)
+            const COL_MAP = {
+                'C#14':             { lotCol:1, boxCol:3, m2Col:4, totalBoxCol:15, totalM2Col:16 },
+                'C#15':             { lotCol:1, boxCol:3, m2Col:4, totalBoxCol:19, totalM2Col:20 },
+                'C#18':             { lotCol:1, boxCol:3, m2Col:4, totalBoxCol:15, totalM2Col:16 },
+                'C#19':             { lotCol:1, boxCol:3, m2Col:4, totalBoxCol:15, totalM2Col:16 },
+                'A#14':             { lotCol:1, boxCol:3, m2Col:4, totalBoxCol:15, totalM2Col:16 },
+                'A#15':             { lotCol:1, boxCol:3, m2Col:4, totalBoxCol:17, totalM2Col:18 },
+                'A#16':             { lotCol:1, boxCol:3, m2Col:4, totalBoxCol:17, totalM2Col:18 },
+                'A#171':            { lotCol:1, boxCol:3, m2Col:4, totalBoxCol:19, totalM2Col:20 },
+                'A#17':             { lotCol:1, boxCol:3, m2Col:4, totalBoxCol:19, totalM2Col:20 },
+                'A#18':             { lotCol:1, boxCol:3, m2Col:4, totalBoxCol:33, totalM2Col:34 },
+                'A#19':             { lotCol:1, boxCol:3, m2Col:4, totalBoxCol:17, totalM2Col:18 },
+                'A#20':             { lotCol:1, boxCol:3, m2Col:4, totalBoxCol:17, totalM2Col:18 },
+                'D#,E#,선일,성원특':  { lotCol:1, boxCol:4, m2Col:5, totalBoxCol:16, totalM2Col:17 },
+                '바람1':             { lotCol:2, boxCol:4, m2Col:5, totalBoxCol:13, totalM2Col:14 },
+            };
+
+            // 엑셀 날짜 → 문자열 변환
+            function excelDateToStr(val) {
                 try {
-                    if (typeof serial !== 'number' || serial < 40000) return String(serial);
-                    const date = new Date((serial - 25569) * 86400 * 1000);
-                    const y = date.getUTCFullYear();
-                    const m = String(date.getUTCMonth() + 1).padStart(2, '0');
-                    const d = String(date.getUTCDate()).padStart(2, '0');
-                    return `${y}/${m}/${d}`;
-                } catch(e) { return String(serial); }
+                    if (val instanceof Date) {
+                        const y = val.getFullYear();
+                        const m = String(val.getMonth()+1).padStart(2,'0');
+                        const d = String(val.getDate()).padStart(2,'0');
+                        return y+'/'+m+'/'+d;
+                    }
+                    if (typeof val === 'number' && val > 40000) {
+                        const date = new Date((val - 25569) * 86400 * 1000);
+                        const y = date.getUTCFullYear();
+                        const m = String(date.getUTCMonth()+1).padStart(2,'0');
+                        const d = String(date.getUTCDate()).padStart(2,'0');
+                        return y+'/'+m+'/'+d;
+                    }
+                    return String(val || '').trim();
+                } catch(e) { return String(val || ''); }
+            }
+
+            function roundNum(v) {
+                return typeof v === 'number' ? Math.round(v * 100) / 100 : v;
             }
 
             workbook.SheetNames.forEach(sheetName => {
                 const ws = workbook.Sheets[sheetName];
-                const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-                if (!rows || rows.length < 4) return;
+                const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: false });
+                const rowsRaw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: true });
+                if (!rows || rows.length < 5) return;
+
+                const cm = COL_MAP[sheetName];
+                if (!cm) return; // 매핑 없는 시트 스킵
 
                 let currentItemCode = '';
-
-               let currentItemCode = '';
                 let lastLot = ''; // [추가] LOT 정보를 기억할 변수
 
                 rows.forEach((row, i) => {
@@ -1261,6 +1294,7 @@ function initExcelUpload() {
                         totalM2Val  !== '' ? totalM2Val  : '-'
                     ]);
                 });
+            });
 
             if (matrixData.length <= 1) throw new Error('엑셀에서 읽을 데이터가 없습니다.');
 
@@ -1312,6 +1346,26 @@ function initExcelUpload() {
     });
 }
 
+// ============================================================
+//  재고현황 (STOCK 시트) — 단일 정의
+// ============================================================
+async function fetchStockData() {
+    const tbody = document.getElementById('stockTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = `<tr><td colspan="6" style="padding:20px;text-align:center;color:#888;">데이터를 불러오는 중...</td></tr>`;
+
+    try {
+        // 재고 + 툴팁 병렬 로드
+        await Promise.all([
+            fetchSheetJson(SHEET_CONFIG.STOCK).then(rows => renderStockTable(rows)),
+            loadTooltipMap()
+        ]);
+    } catch (error) {
+        console.error('재고 로드 실패:', error);
+        tbody.innerHTML = `<tr><td colspan="6" style="padding:25px;color:#d63031;font-weight:bold;text-align:center;">
+            시트 데이터를 읽을 수 없습니다. (원인: ${error.message})</td></tr>`;
+    }
+}
 
 function renderStockTable(rows) {
     const tbody = document.getElementById('stockTableBody');
