@@ -1192,21 +1192,98 @@ function initExcelUpload() {
             const arrayBuffer = await selectedFile.arrayBuffer();
             const workbook = XLSX.read(arrayBuffer, { type: 'array' });
 
-            // 2. 모든 시트를 하나의 2차원 배열로 합치기
+            // 2. 모든 시트를 STOCK 형식으로 정제해서 합치기
+            // 출력 형식: [품번, LOT및입고일, BOX규격, 현재고BOX, 총BOX, 총재고㎡]
             const matrixData = [];
+            // 헤더
+            matrixData.push(['품번', 'LOT 및 입고일', 'BOX', '현재고', '총 BOX', '총 재고(㎡)']);
+
+            // 엑셀 날짜 시리얼 → 문자열 변환
+            function excelDateToStr(serial) {
+                try {
+                    if (typeof serial !== 'number' || serial < 40000) return String(serial);
+                    const date = new Date((serial - 25569) * 86400 * 1000);
+                    const y = date.getUTCFullYear();
+                    const m = String(date.getUTCMonth() + 1).padStart(2, '0');
+                    const d = String(date.getUTCDate()).padStart(2, '0');
+                    return `${y}/${m}/${d}`;
+                } catch(e) { return String(serial); }
+            }
 
             workbook.SheetNames.forEach(sheetName => {
                 const ws = workbook.Sheets[sheetName];
                 const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-                if (!rows || rows.length === 0) return;
+                if (!rows || rows.length < 4) return;
 
-                // 시트 구분 헤더 삽입
-                matrixData.push([`[${sheetName}]`, '', '', '', '', '']);
-                rows.forEach(row => matrixData.push(row));
-                matrixData.push(['', '', '', '', '', '']); // 빈 줄 구분
+                let currentItemCode = '';
+
+                rows.forEach((row, i) => {
+                    // 앞 4행(타이틀/헤더) 스킵
+                    if (i < 4) return;
+
+                    const raw0 = String(row[0] || '').trim(); // 수종/품번
+                    const raw1 = row[1];                       // 입고날짜
+                    const raw2 = String(row[2] || '').trim(); // 규격
+                    const raw3 = row[3];                       // BOX(현재고)
+
+                    // 마지막 두 열: 총BOX, 총재고㎡
+                    const lastIdx = row.length - 1;
+                    const totalM2  = row[lastIdx];
+                    const totalBox = row[lastIdx - 1];
+
+                    // 완전 빈 행 스킵
+                    if (!raw0 && !raw1 && !raw2 && (raw3 === '' || raw3 === null || raw3 === undefined)) return;
+
+                    // 헤더/타이틀 행 스킵
+                    if (raw0 === '수종' || String(raw1) === '입고날짜') return;
+                    if (raw0.includes('재고사항') || raw0.includes('재고사황') || raw0.includes('재고상황')) return;
+                    if (raw0.includes('시리즈') && !raw0.match(/[A-Z]#\d/)) return;
+
+                    // 품번 추출 (앞에 색상명이 붙는 경우 처리: "스모크  오크C#1801" → "C#1801")
+                    let itemCode = '';
+                    const codeMatch = raw0.match(/[A-Z]#\s*\d+[\w]*/);
+                    if (codeMatch) {
+                        itemCode = codeMatch[0].replace(/\s+/g, '');
+                    } else if (raw0 && !raw0.includes('NEW') && raw0 !== '') {
+                        itemCode = raw0;
+                    }
+
+                    if (itemCode) currentItemCode = itemCode;
+                    if (!currentItemCode) return;
+
+                    // 입고날짜 처리
+                    let lotInfo = '';
+                    if (typeof raw1 === 'number' && raw1 > 40000) {
+                        lotInfo = excelDateToStr(raw1);
+                    } else {
+                        lotInfo = String(raw1 || '').trim();
+                    }
+
+                    // 규격 없고 BOX도 없으면 스킵
+                    if (!raw2 && (raw3 === '' || raw3 === null || raw3 === undefined)) return;
+
+                    // BOX 수치
+                    const boxVal = typeof raw3 === 'number' ? raw3 : parseFloat(raw3) || 0;
+
+                    // 총BOX, 총재고㎡ — 숫자면 소수점 2자리
+                    const totalBoxVal = typeof totalBox === 'number' ? Math.round(totalBox * 100) / 100 : (totalBox || '');
+                    const totalM2Val  = typeof totalM2  === 'number' ? Math.round(totalM2  * 100) / 100 : (totalM2  || '');
+
+                    // LOT정보에 차수 있고 입고날짜 별도 행이면 합치기
+                    const lotDisplay = lotInfo ? (raw2 ? `${lotInfo}` : lotInfo) : '-';
+
+                    matrixData.push([
+                        itemCode || currentItemCode,
+                        lotDisplay || '-',
+                        raw2 || '-',
+                        boxVal,
+                        totalBoxVal !== '' ? totalBoxVal : '-',
+                        totalM2Val  !== '' ? totalM2Val  : '-'
+                    ]);
+                });
             });
 
-            if (matrixData.length === 0) throw new Error('엑셀에서 읽을 데이터가 없습니다.');
+            if (matrixData.length <= 1) throw new Error('엑셀에서 읽을 데이터가 없습니다.');
 
             statusEl.textContent = '구글시트에 전송 중...';
 
