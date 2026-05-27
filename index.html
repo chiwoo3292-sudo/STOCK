@@ -1426,19 +1426,13 @@ function renderStockTable(rows) {
     let lastSeenItemCode = '';
     let isGrayGroup = false;
 
-
-// 1. itemCode 기준으로 데이터를 그룹화하고 lotInfo를 배열로 합칩니다.
-    const grouped = processedRows.reduce((acc, cur) => {
-        if (!acc[cur.itemCode]) {
-            acc[cur.itemCode] = { ...cur, lotInfos: [] };
+    processedRows.forEach(d => {
+        let displayItemCode = '';
+        if (d.itemCode !== lastSeenItemCode) {
+            isGrayGroup = !isGrayGroup;
+            lastSeenItemCode = d.itemCode;
+            displayItemCode = `<strong>${d.itemCode}</strong>`;
         }
-        acc[cur.itemCode].lotInfos.push(cur.lotInfo);
-        return acc;
-    }, {});
-
-    // 2. 그룹화된 데이터를 순회하며 테이블 행 생성
-    Object.values(grouped).forEach(d => {
-        isGrayGroup = !isGrayGroup; // 스타일 교차 적용
 
         const tr = document.createElement('tr');
         tr.className = isGrayGroup ? 'bg-group-gray' : 'bg-group-white';
@@ -1453,17 +1447,20 @@ function renderStockTable(rows) {
             : d.totalBox;
 
         tr.innerHTML = `
-            <td style="text-align:center;"><strong>${d.itemCode}</strong></td>
-            <td style="text-align:center;">${d.lotInfos.join(', ')}</td>
+            <td style="text-align:center;">${displayItemCode}</td>
+            <td style="text-align:center;">${d.lotInfo}</td>
             <td style="text-align:center;">${d.boxSpec}</td>
             <td style="text-align:center;">${d.curStock}</td>
             <td style="text-align:center;">${totalBoxDisplay}</td>
             <td style="text-align:center;">${m2Display}</td>
         `;
 
+        // 툴팁 — TOOLTIP 시트 기반
         tr.addEventListener('mousemove', async (e) => {
             const tooltip = document.getElementById('stockTooltip');
             if (!tooltip) return;
+
+            // tooltipMap 아직 안 로드됐으면 로드 후 재시도
             if (!tooltipMap) await loadTooltipMap();
 
             const key = d.itemCode.trim().toUpperCase();
@@ -1478,6 +1475,7 @@ function renderStockTable(rows) {
             } else {
                 tooltip.innerHTML = `<strong>[${d.itemCode}]</strong><br>정보 없음`;
             }
+
             tooltip.style.cssText = `display:block;left:${e.pageX + 15}px;top:${e.pageY + 15}px;`;
         });
 
@@ -1488,9 +1486,7 @@ function renderStockTable(rows) {
 
         tbody.appendChild(tr);
     });
-
-
-    }
+}
 
 // 재고 탭 클릭 시 데이터 로드 + 시계 + 업로드 초기화
 document.addEventListener('DOMContentLoaded', () => {
