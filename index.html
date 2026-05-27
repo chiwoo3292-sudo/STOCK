@@ -7,6 +7,7 @@
 <title>바람 단가 안내 시스템</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@latest/dist/web/static/pretendard.css" />
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
   
 .grid-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
@@ -657,7 +658,32 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 
 <section id="stockTab" class="tab-panel">
     <div class="content-card">
-        <h2 class="card-title">실시간 자재 재고 현황</h2>
+
+        <!-- 타이틀 + 시계 -->
+        <div style="text-align:center; margin-bottom:16px;">
+            <h2 style="margin:0 0 5px; font-size:20px; font-weight:800;">실시간 자재 재고 현황</h2>
+            <div id="stockClock" style="font-size:13px; color:#888; font-weight:500;"></div>
+        </div>
+
+        <!-- 엑셀 업로드 영역 -->
+        <div id="uploadArea" style="border:2px dashed #d0d0d0; border-radius:16px; padding:20px 24px; margin-bottom:16px; background:#fafafa; display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+            <div style="flex:1; min-width:200px;">
+                <div style="font-size:14px; font-weight:700; color:#333; margin-bottom:4px;">📂 재고 엑셀 파일 업로드</div>
+                <div style="font-size:12px; color:#888; line-height:1.5;">엑셀 파일(.xlsx)을 선택하면 구글시트에 자동으로 반영됩니다.<br>직원분이 작성한 엑셀 파일을 그대로 올려주세요.</div>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
+                <label for="excelUpload" style="display:inline-flex; align-items:center; gap:6px; min-height:40px; padding:0 18px; background:#111; color:#fff; border-radius:12px; font-size:13px; font-weight:700; cursor:pointer;">
+                    📁 파일 선택
+                </label>
+                <input type="file" id="excelUpload" accept=".xlsx,.xls" style="display:none;" />
+                <div id="uploadStatus" style="font-size:12px; color:#888; text-align:right;">선택된 파일 없음</div>
+            </div>
+            <button id="uploadBtn" type="button" style="min-height:40px; padding:0 20px; background:#2d7ef7; color:#fff; border:none; border-radius:12px; font-size:13px; font-weight:700; cursor:pointer; display:none;">
+                ⬆ 구글시트에 반영
+            </button>
+        </div>
+
+        <!-- 재고 테이블 -->
         <div class="stock-table-wrapper">
             <table id="stockTable">
                 <thead>
@@ -672,7 +698,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
                 </thead>
                 <tbody id="stockTableBody">
                     <tr>
-                        <td colspan="6" style="text-align:center; padding:30px;">
+                        <td colspan="6" style="text-align:center; padding:30px; color:#888;">
                             데이터를 불러오는 중입니다...
                         </td>
                     </tr>
@@ -1108,6 +1134,129 @@ async function loadTooltipMap() {
 }
 
 // ============================================================
+//  Apps Script 웹앱 URL
+// ============================================================
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbycqipsEpR-JzkRdeMhqtYRxfGej3RXvJjyNGDr3oGlMjnXqV8RNEOFFAhoLofm1qvR/exec';
+
+// ============================================================
+//  재고현황 실시간 시계
+// ============================================================
+let stockClockInterval = null;
+function startStockClock() {
+    const el = document.getElementById('stockClock');
+    if (!el) return;
+    function tick() {
+        const now = new Date();
+        const pad = n => String(n).padStart(2, '0');
+        const days = ['일','월','화','수','목','금','토'];
+        el.textContent =
+            `${now.getFullYear()}년 ${pad(now.getMonth()+1)}월 ${pad(now.getDate())}일 (${days[now.getDay()]}) ` +
+            `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())} 기준`;
+    }
+    tick();
+    if (stockClockInterval) clearInterval(stockClockInterval);
+    stockClockInterval = setInterval(tick, 1000);
+}
+
+// ============================================================
+//  엑셀 업로드 → Apps Script → 구글시트 STOCK 반영
+// ============================================================
+function initExcelUpload() {
+    const fileInput  = document.getElementById('excelUpload');
+    const uploadBtn  = document.getElementById('uploadBtn');
+    const statusEl   = document.getElementById('uploadStatus');
+    if (!fileInput || !uploadBtn || !statusEl) return;
+
+    let selectedFile = null;
+
+    // 파일 선택 시
+    fileInput.addEventListener('change', function () {
+        selectedFile = this.files[0];
+        if (!selectedFile) return;
+        statusEl.textContent = `📄 ${selectedFile.name}`;
+        statusEl.style.color = '#2d7ef7';
+        uploadBtn.style.display = 'inline-flex';
+    });
+
+    // 업로드 버튼 클릭 시
+    uploadBtn.addEventListener('click', async function () {
+        if (!selectedFile) return;
+
+        uploadBtn.disabled = true;
+        uploadBtn.textContent = '⏳ 처리 중...';
+        statusEl.style.color = '#888';
+        statusEl.textContent = '엑셀을 읽는 중...';
+
+        try {
+            // 1. SheetJS로 엑셀 읽기
+            const arrayBuffer = await selectedFile.arrayBuffer();
+            const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+
+            // 2. 모든 시트를 하나의 2차원 배열로 합치기
+            const matrixData = [];
+
+            workbook.SheetNames.forEach(sheetName => {
+                const ws = workbook.Sheets[sheetName];
+                const rows = XLSX.utils.sheet_to_array(ws, { defval: '' });
+                if (!rows || rows.length === 0) return;
+
+                // 시트 구분 헤더 삽입
+                matrixData.push([`[${sheetName}]`, '', '', '', '', '']);
+                rows.forEach(row => matrixData.push(row));
+                matrixData.push(['', '', '', '', '', '']); // 빈 줄 구분
+            });
+
+            if (matrixData.length === 0) throw new Error('엑셀에서 읽을 데이터가 없습니다.');
+
+            statusEl.textContent = '구글시트에 전송 중...';
+
+            // 3. Apps Script로 POST 전송
+            const res = await fetch(GAS_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' }, // CORS 우회
+                body: JSON.stringify({
+                    spreadsheetId: SHEET_CONFIG.ID,
+                    sheetName: SHEET_CONFIG.STOCK,
+                    matrixData: matrixData
+                })
+            });
+
+            const result = await res.json();
+
+            if (result.status === 'success') {
+                statusEl.textContent = '✅ 구글시트 반영 완료!';
+                statusEl.style.color = '#00a854';
+                uploadBtn.textContent = '✅ 완료';
+                showToast('재고 데이터가 구글시트에 반영되었습니다!');
+
+                // 테이블 새로고침
+                setTimeout(() => fetchStockData(), 1500);
+
+                // 버튼 초기화
+                setTimeout(() => {
+                    uploadBtn.textContent = '⬆ 구글시트에 반영';
+                    uploadBtn.disabled = false;
+                    uploadBtn.style.display = 'none';
+                    fileInput.value = '';
+                    selectedFile = null;
+                    statusEl.textContent = '선택된 파일 없음';
+                    statusEl.style.color = '#888';
+                }, 3000);
+            } else {
+                throw new Error(result.message || '서버 오류');
+            }
+
+        } catch (err) {
+            console.error('업로드 오류:', err);
+            statusEl.textContent = '❌ 실패: ' + err.message;
+            statusEl.style.color = '#d63031';
+            uploadBtn.textContent = '⬆ 구글시트에 반영';
+            uploadBtn.disabled = false;
+        }
+    });
+}
+
+// ============================================================
 //  재고현황 (STOCK 시트) — 단일 정의
 // ============================================================
 async function fetchStockData() {
@@ -1237,11 +1386,15 @@ function renderStockTable(rows) {
     });
 }
 
-// 재고 탭 클릭 시 데이터 로드
+// 재고 탭 클릭 시 데이터 로드 + 시계 + 업로드 초기화
 document.addEventListener('DOMContentLoaded', () => {
+    initExcelUpload();
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-            if (btn.dataset.tab === 'stockTab') fetchStockData();
+            if (btn.dataset.tab === 'stockTab') {
+                startStockClock();
+                fetchStockData();
+            }
         });
     });
 });
