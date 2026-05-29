@@ -1653,7 +1653,7 @@ function initExcelUpload() {
             stockSheetNames.forEach(sheetName => {
                 const ws = workbook.Sheets[sheetName];
                 if (!ws) return;
-                const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true });
+               const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false });
                 if (!rows || rows.length < 5) return;
                 
                 const cm = COL_MAP[sheetName];
@@ -1712,7 +1712,7 @@ function initExcelUpload() {
                 if (!ws) return;
                 
                 // 시트 데이터를 2차원 배열로 변환
-                const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: '' });
+                const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: '' });
                 if (!rows || rows.length === 0) return;
                 
                 // 빈 행 제거 (선택 사항)
