@@ -1517,6 +1517,24 @@ async function loadTooltipMap() {
 // ============================================================
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbycqipsEpR-JzkRdeMhqtYRxfGej3RXvJjyNGDr3oGlMjnXqV8RNEOFFAhoLofm1qvR/exec';
 
+  // COL_MAP 정의 (initExcelUpload 함수보다 위에 있어야 함)
+const COL_MAP = {
+    'C#14':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:15, totalM2Col:16, reserveStartCol:5, reserveStep:2 },
+    'C#15':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:19, totalM2Col:20, reserveStartCol:5, reserveStep:2 },
+    'C#18':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:15, totalM2Col:16, reserveStartCol:5, reserveStep:2 },
+    'C#19':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:15, totalM2Col:16, reserveStartCol:5, reserveStep:2 },
+    'A#14':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:15, totalM2Col:16, reserveStartCol:5, reserveStep:2 },
+    'A#15':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:17, totalM2Col:18, reserveStartCol:5, reserveStep:2 },
+    'A#16':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:17, totalM2Col:18, reserveStartCol:5, reserveStep:2 },
+    'A#171':  { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:19, totalM2Col:20, reserveStartCol:5, reserveStep:2 },
+    'A#17':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:19, totalM2Col:20, reserveStartCol:5, reserveStep:2 },
+    'A#18':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:33, totalM2Col:34, reserveStartCol:4, reserveStep:2 },
+    'A#19':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:17, totalM2Col:18, reserveStartCol:5, reserveStep:2 },
+    'A#20':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:17, totalM2Col:18, reserveStartCol:5, reserveStep:2 },
+    'D#,E#,선일,성원특': { itemCol:0, lotCol:1, boxCol:4, m2Col:5, totalBoxCol:16, totalM2Col:17, reserveStartCol:6, reserveStep:2 },
+    '바람1':  { itemCol:1, lotCol:2, boxCol:4, m2Col:5, totalBoxCol:13, totalM2Col:14, reserveStartCol:6, reserveStep:2 },
+};
+
 // ============================================================
 //  재고현황 실시간 시계
 // ============================================================
