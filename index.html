@@ -1537,16 +1537,12 @@ function startStockClock() {
     stockClockInterval = setInterval(tick, 1000);
 }
 
-// ============================================================
-//  엑셀 업로드 → Apps Script → 구글시트 STOCK 반영
-// ============================================================
 function initExcelUpload() {
-    const fileInput  = document.getElementById('excelUpload');
-    const uploadBtn  = document.getElementById('uploadBtn');
-    const statusEl   = document.getElementById('uploadStatus');
+    const fileInput = document.getElementById('excelUpload');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const statusEl = document.getElementById('uploadStatus');
     if (!fileInput || !uploadBtn || !statusEl) return;
 
-    // 마지막 업로드 시간 복원 — GAS에서 공유 시간 가져오기
     const lastEl = document.getElementById('lastUploadTime');
     if (lastEl) {
         lastEl.textContent = '🕐 업로드 시간 확인 중...';
@@ -1563,7 +1559,6 @@ function initExcelUpload() {
                 }
             })
             .catch(() => {
-                // GAS 실패 시 localStorage 폴백
                 const local = localStorage.getItem('baram_last_upload');
                 if (local) lastEl.textContent = `🕐 마지막 업로드: ${local}`;
                 else lastEl.textContent = '';
@@ -1572,7 +1567,6 @@ function initExcelUpload() {
 
     let selectedFile = null;
 
-    // 파일 선택 시
     fileInput.addEventListener('change', function () {
         selectedFile = this.files[0];
         if (!selectedFile) return;
@@ -1581,7 +1575,6 @@ function initExcelUpload() {
         uploadBtn.style.display = 'inline-flex';
     });
 
-    // 업로드 버튼 클릭 시
     uploadBtn.addEventListener('click', async function () {
         if (!selectedFile) return;
 
@@ -1591,30 +1584,14 @@ function initExcelUpload() {
         statusEl.textContent = '엑셀을 읽는 중...';
 
         try {
-            // 1. SheetJS로 엑셀 읽기
             const arrayBuffer = await selectedFile.arrayBuffer();
             const workbook = XLSX.read(arrayBuffer, { type: 'array' });
 
-            // 2. 모든 시트를 STOCK 형식으로 정제해서 합치기
+            // ============================================================
+            // 1. STOCK 시트용 데이터 추출 (기존 방식 유지)
+            // ============================================================
             const matrixData = [];
             matrixData.push(['품번', 'LOT 및 입고일', 'BOX', '현재고(㎡)', '총 BOX', '총 재고(㎡)']);
-
-            const COL_MAP = {
-    'C#14':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:15, totalM2Col:16, reserveStartCol:5, reserveStep:2 },
-    'C#15':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:19, totalM2Col:20, reserveStartCol:5, reserveStep:2 },
-    'C#18':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:15, totalM2Col:16, reserveStartCol:5, reserveStep:2 },
-    'C#19':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:15, totalM2Col:16, reserveStartCol:5, reserveStep:2 },
-    'A#14':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:15, totalM2Col:16, reserveStartCol:5, reserveStep:2 },
-    'A#15':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:17, totalM2Col:18, reserveStartCol:5, reserveStep:2 },
-    'A#16':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:17, totalM2Col:18, reserveStartCol:5, reserveStep:2 },
-    'A#171':  { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:19, totalM2Col:20, reserveStartCol:5, reserveStep:2 },
-    'A#17':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:19, totalM2Col:20, reserveStartCol:5, reserveStep:2 },
-    'A#18':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:33, totalM2Col:34, reserveStartCol:4, reserveStep:2 },
-    'A#19':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:17, totalM2Col:18, reserveStartCol:5, reserveStep:2 },
-    'A#20':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:17, totalM2Col:18, reserveStartCol:5, reserveStep:2 },
-    'D#,E#,선일,성원특': { itemCol:0, lotCol:1, boxCol:4, m2Col:5, totalBoxCol:16, totalM2Col:17, reserveStartCol:6, reserveStep:2 },
-    '바람1':  { itemCol:1, lotCol:2, boxCol:4, m2Col:5, totalBoxCol:13, totalM2Col:14, reserveStartCol:6, reserveStep:2 },
-};
 
             function excelDateToStr(val) {
                 if (val === null || val === undefined) return '';
@@ -1629,191 +1606,112 @@ function initExcelUpload() {
                 return typeof v === 'number' ? Math.round(v * 100) / 100 : v;
             }
 
-            // defval을 쓰지 않고 raw 배열로 읽어서 직접 undefined 체크
-            // 보조행 = boxCol 위치에 값이 없거나 undefined (단가행은 BOX열이 항상 비어있음)
             function getCell(row, col) {
                 return row.length > col ? row[col] : undefined;
-            }
-
-            function fillMergedItemCodes(ws, rows, itemCol) {
-                const merges = ws['!merges'] || [];
-                merges.forEach(range => {
-                    if (range.s.c > itemCol || range.e.c < itemCol) return;
-                    const sourceRow = range.s.r;
-                    const sourceVal = getCell(rows[sourceRow] || [], itemCol);
-                    if (!hasValue(sourceVal)) return;
-
-                    for (let r = range.s.r; r <= range.e.r; r++) {
-                        if (!rows[r]) rows[r] = [];
-                        if (!hasValue(rows[r][itemCol])) rows[r][itemCol] = sourceVal;
-                    }
-                });
             }
 
             function hasValue(v) {
                 return v !== null && v !== undefined && v !== '';
             }
 
-            function isSubRow(row, cm) {
-                const boxVal = getCell(row, cm.boxCol);
-                // BOX열에 값이 없으면 보조행
-                return !hasValue(boxVal);
+            function fillMergedItemCodes(ws, rows, itemCol) {
+                const merges = ws['!merges'] || [];
+                merges.forEach(range => {
+                    if (range.s.c > itemCol || range.e.c < itemCol) return;
+                    const sourceRow = rows[range.s.r];
+                    const sourceVal = sourceRow ? sourceRow[itemCol] : '';
+                    if (!hasValue(sourceVal)) return;
+                    for (let r = range.s.r; r <= range.e.r; r++) {
+                        if (rows[r] && !hasValue(rows[r][itemCol])) {
+                            rows[r][itemCol] = sourceVal;
+                        }
+                    }
+                });
             }
 
-            workbook.SheetNames.forEach(sheetName => {
+            // STOCK 데이터 추출 (기존 방식)
+            const stockSheetNames = ['C#14', 'C#15', 'C#18', 'C#19', 'A#14', 'A#15', 'A#16', 'A#171', 'A#17', 'A#18', 'A#19', 'A#20', 'D#,E#,선일,성원특', '바람1'];
+            
+            stockSheetNames.forEach(sheetName => {
                 const ws = workbook.Sheets[sheetName];
-                // defval 없이 읽어서 빈 셀은 진짜 undefined로 남김
-                const rows = XLSX.utils.sheet_to_json(ws, { header:1, raw:true });
+                if (!ws) return;
+                const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true });
                 if (!rows || rows.length < 5) return;
-
+                
                 const cm = COL_MAP[sheetName];
                 if (!cm) return;
                 fillMergedItemCodes(ws, rows, cm.itemCol);
 
                 let currentItemCode = '';
-                let i = 4; // 앞 4행 스킵
-
+                let i = 4;
                 while (i < rows.length) {
                     const row = rows[i];
                     const boxVal = getCell(row, cm.boxCol);
-
-                    // BOX열 없으면 보조행 → 스킵
                     if (!hasValue(boxVal)) { i++; continue; }
-
-                    // 품번 셀
-                    const rawItem = String(getCell(row, cm.itemCol) || '').replace(/\n|\r/g,' ').trim();
-
-                    // 헤더/타이틀 스킵
-                    if (rawItem === '수종' || rawItem === '시리즈' ||
-                        rawItem.includes('재고사항') || rawItem.includes('재고사황') || rawItem.includes('재고상황')) {
-                        i++; continue;
-                    }
-
-                    // 품번 추출
+                    const rawItem = String(getCell(row, cm.itemCol) || '').replace(/\n|\r/g, ' ').trim();
+                    if (rawItem === '수종' || rawItem === '시리즈' || rawItem.includes('재고사항') || rawItem.includes('재고사황') || rawItem.includes('재고상황')) { i++; continue; }
                     let itemCode = '';
                     const codeMatch = rawItem.match(/[A-Z]#\s*\d+\w*/);
-                    if (codeMatch) {
-                        itemCode = codeMatch[0].replace(/\s+/g,'');
-                    } else if (rawItem && rawItem !== 'NEW') {
-                        itemCode = rawItem;
-                    }
+                    if (codeMatch) { itemCode = codeMatch[0].replace(/\s+/g, ''); }
+                    else if (rawItem && rawItem !== 'NEW') { itemCode = rawItem; }
                     if (itemCode) currentItemCode = itemCode;
                     if (!currentItemCode) { i++; continue; }
-
-                    // 차수/LOT
                     const chasu = excelDateToStr(getCell(row, cm.lotCol));
-
-                    // 다음 행이 보조행이면 소비 → 날짜/텍스트
                     let subInfo = '';
-                    if (i + 1 < rows.length && isSubRow(rows[i+1], cm)) {
-                        const subVal = getCell(rows[i+1], cm.lotCol);
-                        subInfo = excelDateToStr(subVal);
-                        i++; // 보조행 소비
+                    if (i + 1 < rows.length) {
+                        const nextRow = rows[i + 1];
+                        const nextBoxVal = getCell(nextRow, cm.boxCol);
+                        if (!hasValue(nextBoxVal)) {
+                            const subVal = getCell(nextRow, cm.lotCol);
+                            subInfo = excelDateToStr(subVal);
+                            i++;
+                        }
                     }
-
-                    // LOT 조합
                     let lotStr = chasu || '-';
                     if (subInfo) lotStr = `${chasu}(${subInfo})`;
-
-                    // 수치
-                    const m2Val    = getCell(row, cm.m2Col);
+                    const m2Val = getCell(row, cm.m2Col);
                     const totalBox = getCell(row, cm.totalBoxCol);
-                    const totalM2  = getCell(row, cm.totalM2Col);
-
-                    const box    = typeof boxVal === 'number' ? boxVal : (parseFloat(String(boxVal)) || 0);
-                    const curM2  = roundNum(typeof m2Val === 'number' ? m2Val : (parseFloat(String(m2Val||0)) || 0));
+                    const totalM2 = getCell(row, cm.totalM2Col);
+                    const box = typeof boxVal === 'number' ? boxVal : (parseFloat(String(boxVal)) || 0);
+                    const curM2 = roundNum(typeof m2Val === 'number' ? m2Val : (parseFloat(String(m2Val || 0)) || 0));
                     const totBox = typeof totalBox === 'number' ? roundNum(totalBox) : (hasValue(totalBox) ? totalBox : '-');
-                    const totM2  = typeof totalM2  === 'number' ? roundNum(totalM2)  : (hasValue(totalM2)  ? totalM2  : '-');
-
+                    const totM2 = typeof totalM2 === 'number' ? roundNum(totalM2) : (hasValue(totalM2) ? totalM2 : '-');
                     matrixData.push([currentItemCode, lotStr, box, curM2, totBox, totM2]);
                     i++;
                 }
             });
 
-            if (matrixData.length <= 1) throw new Error('엑셀에서 읽을 데이터가 없습니다.');
+            if (matrixData.length <= 1) throw new Error('엑셀에서 읽을 재고 데이터가 없습니다.');
 
-           // ========== 예약 데이터 추출 (모든 시트, 모든 타입) ==========
-const reserveData = [];
-reserveData.push(['품번', '업체명', '평형', '일정']);
-
-workbook.SheetNames.forEach(sheetName => {
-    const ws = workbook.Sheets[sheetName];
-    const rows = XLSX.utils.sheet_to_json(ws, { header:1, raw:true, defval:'' });
-    if (!rows || rows.length < 6) return;
-    
-    const cm = COL_MAP[sheetName];
-    if (!cm) return;
-    
-    // 1. 병합셀 품번 채우기
-    const merges = ws['!merges'] || [];
-    merges.forEach(range => {
-        if (range.s.c > cm.itemCol || range.e.c < cm.itemCol) return;
-        const sourceRow = rows[range.s.r];
-        const sourceVal = sourceRow ? sourceRow[cm.itemCol] : '';
-        if (!sourceVal || sourceVal === '') return;
-        for (let r = range.s.r; r <= range.e.r; r++) {
-            if (rows[r] && (!rows[r][cm.itemCol] || rows[r][cm.itemCol] === '')) {
-                rows[r][cm.itemCol] = sourceVal;
-            }
-        }
-    });
-    
-    let currentItemCode = '';
-    const rsc = cm.reserveStartCol;
-    
-    for (let i = 0; i < rows.length; i++) {
-        const row = rows[i];
-        if (!row || row.length === 0) continue;
-        
-        // 품번 업데이트 (A열 또는 지정된 itemCol)
-        let rawItem = String(row[cm.itemCol] || '').trim();
-        // 숫자+텍스트 조합 품번 추출 (C#1401, A#18001 등)
-        let codeMatch = rawItem.match(/[A-Z]#\s*\d+[A-Z0-9]*/i);
-        if (codeMatch) {
-            currentItemCode = codeMatch[0].replace(/\s+/g, '');
-        } else if (rawItem && rawItem !== '' && !rawItem.includes('차') && !rawItem.includes('수종') && !rawItem.includes('시리즈')) {
-            // NEW, 특수 품번 처리
-            if (rawItem.match(/^[A-Z0-9#]+$/i)) currentItemCode = rawItem;
-        }
-        if (!currentItemCode) continue;
-        
-        // 예약 데이터 추출 (업체명, 평수, 일정)
-        // rsc 이후 2칸씩 건너뛰며 업체명(짝수열) + 평수(다음행 같은열) + 일정(다음행+1열)
-        for (let colIdx = rsc + 1; colIdx < (row.length || 50); colIdx += cm.reserveStep) {
-            const companyRaw = row[colIdx];
-            if (!companyRaw || typeof companyRaw !== 'string') continue;
-            const company = companyRaw.trim();
-            if (company === '' || company === '-' || company === '합계' || company.includes('BOX')) continue;
+            // ============================================================
+            // 2. 모든 시트를 구글시트에 통째로 복사 (새로운 기능)
+            // ============================================================
+            const allSheetsData = [];
             
-            // 다음 행 (i+1)에서 평수와 일정 읽기
-            const nextRow = rows[i + 1];
-            if (!nextRow) continue;
-            
-            let area = '';
-let date = '';
+            workbook.SheetNames.forEach(sheetName => {
+                // STOCK용 시트명 목록에 있으면 재고 데이터는 별도로 뺐으니, 원본 시트도 복사
+                const ws = workbook.Sheets[sheetName];
+                if (!ws) return;
+                
+                // 시트 데이터를 2차원 배열로 변환
+                const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: '' });
+                if (!rows || rows.length === 0) return;
+                
+                // 빈 행 제거 (선택 사항)
+                const filteredRows = rows.filter(row => {
+                    if (!row || row.length === 0) return false;
+                    return row.some(cell => cell !== undefined && cell !== null && cell !== '');
+                });
+                
+                if (filteredRows.length === 0) return;
+                
+                allSheetsData.push({
+                    sheetName: sheetName,
+                    data: filteredRows
+                });
+            });
 
-// 수정: area(평형)는 colIdx+1, date(일정)는 colIdx+2
-const areaRaw = nextRow[colIdx + 1];
-if (areaRaw !== undefined && areaRaw !== null && areaRaw !== '') {
-    area = String(areaRaw).replace(/[^0-9.]/g, '');
-}
-const dateRaw = nextRow[colIdx + 2];
-if (dateRaw !== undefined && dateRaw !== null && dateRaw !== '') {
-    date = String(dateRaw).trim();
-}
-            
-            if (company && (area || date)) {
-                reserveData.push([currentItemCode, company, area, date]);
-            }
-        }
-    }
-});
-
-// reserveData가 헤더만 있는 경우 빈 배열 처리
-const finalReserveData = reserveData.length > 1 ? reserveData : null;
-
-            // 업로드 전 확인
-            if (!confirm('파일을 업로드 하시겠습니까?')) {
+            if (!confirm('파일을 업로드 하시겠습니까?\n\n- STOCK 시트: 재고 데이터 갱신\n- 기타 시트: 엑셀 내용으로 통째로 덮어쓰기')) {
                 statusEl.textContent = '업로드가 취소되었습니다.';
                 uploadBtn.textContent = '⬆ 구글시트에 반영';
                 uploadBtn.disabled = false;
@@ -1821,41 +1719,33 @@ const finalReserveData = reserveData.length > 1 ? reserveData : null;
             }
 
             statusEl.textContent = '구글시트에 전송 중...';
-
-            // 3. Apps Script로 POST 전송
+            
             const res = await fetch(GAS_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'text/plain' }, // CORS 우회
+                headers: { 'Content-Type': 'text/plain' },
                 body: JSON.stringify({
                     spreadsheetId: SHEET_CONFIG.ID,
                     sheetName: SHEET_CONFIG.STOCK,
                     matrixData: matrixData,
-                    reserveSheetName: 'RESERVE',
-                    reserveData: (reserveData && reserveData.length > 1) ? reserveData : null
+                    allSheetsData: allSheetsData  // 모든 시트 통째로 복사할 데이터
                 })
             });
-
+            
             const result = await res.json();
-
+            
             if (result.status === 'success') {
-                alert('파일이 정상적으로 업로드되었습니다.');
-
-                // 마지막 업로드 시간 — GAS에 기록 (모든 기기 공유)
+                alert('파일이 정상적으로 업로드되었습니다.\n\n- STOCK 시트: 재고 갱신 완료\n- 모든 시트: 엑셀 내용으로 복사 완료');
                 const now = new Date();
                 const pad = n => String(n).padStart(2, '0');
                 const timeStr = `${now.getFullYear()}.${pad(now.getMonth()+1)}.${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-                localStorage.setItem('baram_last_upload', timeStr); // 폴백용
+                localStorage.setItem('baram_last_upload', timeStr);
                 const lastEl = document.getElementById('lastUploadTime');
                 if (lastEl) lastEl.textContent = `🕐 마지막 업로드: ${timeStr}`;
                 statusEl.textContent = '✅ 구글시트 반영 완료!';
                 statusEl.style.color = '#00a854';
                 uploadBtn.textContent = '✅ 완료';
-                showToast('재고 데이터가 구글시트에 반영되었습니다!');
-
-                // 테이블 새로고침
+                showToast('모든 데이터가 구글시트에 반영되었습니다!');
                 setTimeout(() => fetchStockData(), 1500);
-
-                // 버튼 초기화
                 setTimeout(() => {
                     uploadBtn.textContent = '⬆ 구글시트에 반영';
                     uploadBtn.disabled = false;
@@ -1868,7 +1758,6 @@ const finalReserveData = reserveData.length > 1 ? reserveData : null;
             } else {
                 throw new Error(result.message || '서버 오류');
             }
-
         } catch (err) {
             console.error('업로드 오류:', err);
             statusEl.textContent = '❌ 실패: ' + err.message;
