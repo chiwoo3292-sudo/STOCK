@@ -1600,21 +1600,20 @@ function initExcelUpload() {
             matrixData.push(['품번', 'LOT 및 입고일', 'BOX', '현재고(㎡)', '총 BOX', '총 재고(㎡)']);
 
             const COL_MAP = {
-    // 시트명: { itemCol, lotCol, boxCol, m2Col, totalBoxCol, totalM2Col, reserveStartCol }
-    'C#14':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:15, totalM2Col:16, reserveStartCol:5, reservePattern:'시공', reserveStep:2 },
-    'C#15':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:19, totalM2Col:20, reserveStartCol:5, reservePattern:'예약', reserveStep:2 },
-    'C#18':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:15, totalM2Col:16, reserveStartCol:5, reservePattern:'시공', reserveStep:2 },
-    'C#19':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:15, totalM2Col:16, reserveStartCol:5, reservePattern:'예약', reserveStep:2 },
-    'A#14':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:15, totalM2Col:16, reserveStartCol:5, reservePattern:'예약', reserveStep:2 },
-    'A#15':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:17, totalM2Col:18, reserveStartCol:5, reservePattern:'시공', reserveStep:2 },
-    'A#16':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:17, totalM2Col:18, reserveStartCol:5, reservePattern:'시공', reserveStep:2 },
-    'A#171':  { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:19, totalM2Col:20, reserveStartCol:5, reservePattern:'예약', reserveStep:2 },
-    'A#17':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:19, totalM2Col:20, reserveStartCol:5, reservePattern:'예약', reserveStep:2 },
-    'A#18':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:33, totalM2Col:34, reserveStartCol:4, reservePattern:'예약', reserveStep:2 },
-    'A#19':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:17, totalM2Col:18, reserveStartCol:5, reservePattern:'예약', reserveStep:2 },
-    'A#20':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:17, totalM2Col:18, reserveStartCol:5, reservePattern:'예약', reserveStep:2 },
-    'D#,E#,선일,성원특': { itemCol:0, lotCol:1, boxCol:4, m2Col:5, totalBoxCol:16, totalM2Col:17, reserveStartCol:6, reservePattern:'예약', reserveStep:2 },
-    '바람1':  { itemCol:1, lotCol:2, boxCol:4, m2Col:5, totalBoxCol:13, totalM2Col:14, reserveStartCol:6, reservePattern:'시공', reserveStep:2 },
+    'C#14':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:15, totalM2Col:16, reserveStartCol:5, reserveStep:2 },
+    'C#15':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:19, totalM2Col:20, reserveStartCol:5, reserveStep:2 },
+    'C#18':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:15, totalM2Col:16, reserveStartCol:5, reserveStep:2 },
+    'C#19':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:15, totalM2Col:16, reserveStartCol:5, reserveStep:2 },
+    'A#14':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:15, totalM2Col:16, reserveStartCol:5, reserveStep:2 },
+    'A#15':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:17, totalM2Col:18, reserveStartCol:5, reserveStep:2 },
+    'A#16':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:17, totalM2Col:18, reserveStartCol:5, reserveStep:2 },
+    'A#171':  { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:19, totalM2Col:20, reserveStartCol:5, reserveStep:2 },
+    'A#17':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:19, totalM2Col:20, reserveStartCol:5, reserveStep:2 },
+    'A#18':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:33, totalM2Col:34, reserveStartCol:4, reserveStep:2 },
+    'A#19':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:17, totalM2Col:18, reserveStartCol:5, reserveStep:2 },
+    'A#20':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:17, totalM2Col:18, reserveStartCol:5, reserveStep:2 },
+    'D#,E#,선일,성원특': { itemCol:0, lotCol:1, boxCol:4, m2Col:5, totalBoxCol:16, totalM2Col:17, reserveStartCol:6, reserveStep:2 },
+    '바람1':  { itemCol:1, lotCol:2, boxCol:4, m2Col:5, totalBoxCol:13, totalM2Col:14, reserveStartCol:6, reserveStep:2 },
 };
 
             function excelDateToStr(val) {
@@ -1791,18 +1790,17 @@ workbook.SheetNames.forEach(sheetName => {
             if (!nextRow) continue;
             
             let area = '';
-            let date = '';
-            
-            // 평수: 같은 열(colIdx)
-            const areaRaw = nextRow[colIdx];
-            if (areaRaw !== undefined && areaRaw !== null && areaRaw !== '') {
-                area = String(areaRaw).replace(/[^0-9.]/g, '');
-            }
-            // 일정: 다음 열(colIdx + 1)
-            const dateRaw = nextRow[colIdx + 1];
-            if (dateRaw !== undefined && dateRaw !== null && dateRaw !== '') {
-                date = String(dateRaw).trim();
-            }
+let date = '';
+
+// 수정: area(평형)는 colIdx+1, date(일정)는 colIdx+2
+const areaRaw = nextRow[colIdx + 1];
+if (areaRaw !== undefined && areaRaw !== null && areaRaw !== '') {
+    area = String(areaRaw).replace(/[^0-9.]/g, '');
+}
+const dateRaw = nextRow[colIdx + 2];
+if (dateRaw !== undefined && dateRaw !== null && dateRaw !== '') {
+    date = String(dateRaw).trim();
+}
             
             if (company && (area || date)) {
                 reserveData.push([currentItemCode, company, area, date]);
