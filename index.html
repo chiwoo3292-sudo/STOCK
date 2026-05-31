@@ -4,6 +4,24 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=yes">
 <title>바람 단가 안내 시스템</title>
+
+<!-- ── PWA 설정 ── -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#111111">
+<meta name="mobile-web-app-capable" content="yes">
+
+<!-- iOS PWA 설정 -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="바람ERP">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152.png">
+<link rel="apple-touch-icon" sizes="144x144" href="icons/icon-144.png">
+<link rel="apple-touch-icon" sizes="128x128" href="icons/icon-128.png">
+
+<!-- 스플래시 스크린 (iOS) -->
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<!-- ── /PWA 설정 ── -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@latest/dist/web/static/pretendard.css" />
 <!-- KoPubWorld 돋움체 & Century Gothic 대체 -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -713,6 +731,12 @@ function unlock() {
     <button id="itemDetailClose" style="position:absolute;top:16px;right:16px;background:none;border:none;font-size:22px;cursor:pointer;color:#888;">✕</button>
     <h2 id="itemDetailTitle" style="margin:0 0 20px; font-size:18px; font-weight:800; color:#1a1a2e;"></h2>
 
+    <!-- 잔여 총재고 -->
+    <div style="margin-bottom:20px;">
+      <div style="font-size:13px; font-weight:700; color:#555; margin-bottom:8px; padding-bottom:6px; border-bottom:2px solid #eee;">📊 잔여 총재고</div>
+      <div id="itemDetailStock" style="font-size:15px; font-weight:800; color:#e84393;"></div>
+    </div>
+
     <!-- 발주현황 -->
     <div style="margin-bottom:20px;">
       <div style="font-size:13px; font-weight:700; color:#555; margin-bottom:8px; padding-bottom:6px; border-bottom:2px solid #eee;">📦 발주현황</div>
@@ -765,7 +789,7 @@ function unlock() {
   font-size:11px; color:#0f172a; border:1px solid #111; border-radius:0;
   box-shadow:0 8px 24px rgba(0,0,0,.08); position:relative;
 }
-.inv-brand { margin-left:14px; font-family:'Times New Roman',serif; font-size:13px; letter-spacing:6.5px; color:#111; line-height:1; display:block; width:fit-content; }
+.inv-brand { display:block; margin-left:7px; font-family:'Times New Roman',serif; font-size:13px; color:#111; line-height:1; letter-spacing:8px; white-space:nowrap; }
 /* INVOICE 타이틀: G마켓 산스 Bold 31.5pt → px환산 ~42px, 실제 크기는 56px 유지하되 font-family만 교체 */
 .inv-title { margin:8px 0 94px 7px; font-family:'GmarketSans','G마켓 산스','Gmarket Sans','NanumGothicExtraBold','맑은 고딕',sans-serif; font-size:56px; font-weight:900; letter-spacing:-1px; line-height:.86; color:#242424; }
 .inv-meta-grid { display:grid; grid-template-columns:1fr auto; gap:20px; align-items:end; margin-bottom:38px; padding-bottom:5px; border-bottom:1px solid #9a9a9a; }
@@ -852,9 +876,8 @@ function unlock() {
   .btn-text { display:inline !important; font-size:10px !important; }
   #invPreviewBtn { font-size:10px !important; }
 
-  /* 가격기준/로스율/로스적용 → 2열 배치 */
-  .inv-loss-row { grid-template-columns:1fr 1fr !important; }
-  .inv-loss-row .inv-loss-chk-wrap { grid-column: 2; grid-row: 1; align-self:end; }
+  /* 가격기준/로스율 → 2열 배치 */
+  .inv-loss-row { grid-template-columns:1.8fr 1fr !important; }
 
   /* ── 미리보기 영역 ── */
   .inv-preview-wrap {
@@ -975,7 +998,7 @@ function unlock() {
           <input type="number" id="invQty1" class="inv-qty-input" step="0.01" min="0">
         </div>
       </div>
-      <div class="inv-loss-row" style="display:grid; grid-template-columns:1.8fr 1fr auto; gap:8px; align-items:end; margin-bottom:12px;">
+      <div class="inv-loss-row" style="display:grid; grid-template-columns:1.8fr 1fr; gap:8px; align-items:end; margin-bottom:12px;">
         <div class="inv-field" style="margin-bottom:0;">
           <div class="inv-label">가격 기준</div>
           <select id="invParty1" class="inv-party-select">
@@ -983,15 +1006,9 @@ function unlock() {
             <option value="vendor">업체가</option>
           </select>
         </div>
-        <div class="inv-field" style="margin-bottom:0; min-width:72px;">
+        <div class="inv-field" style="margin-bottom:0;">
           <div class="inv-label">로스율(%)</div>
           <input type="number" id="invLoss1" class="inv-loss-input" step="0.1" min="0" placeholder="0">
-        </div>
-        <div class="inv-field inv-loss-chk-wrap" style="margin-bottom:0; display:flex; flex-direction:column; align-items:center; justify-content:flex-end;">
-          <div class="inv-label" style="text-align:center;">로스 적용</div>
-          <div style="height:38px; display:flex; align-items:center;">
-            <input type="checkbox" id="invLossOn1" class="inv-loss-chk" style="width:18px; height:18px; cursor:pointer; border-radius:4px;">
-          </div>
         </div>
       </div>
     </div>
@@ -1517,24 +1534,6 @@ async function loadTooltipMap() {
 // ============================================================
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbycqipsEpR-JzkRdeMhqtYRxfGej3RXvJjyNGDr3oGlMjnXqV8RNEOFFAhoLofm1qvR/exec';
 
-  // COL_MAP 정의 (initExcelUpload 함수보다 위에 있어야 함)
-const COL_MAP = {
-    'C#14':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:15, totalM2Col:16, reserveStartCol:5, reserveStep:2 },
-    'C#15':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:19, totalM2Col:20, reserveStartCol:5, reserveStep:2 },
-    'C#18':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:15, totalM2Col:16, reserveStartCol:5, reserveStep:2 },
-    'C#19':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:15, totalM2Col:16, reserveStartCol:5, reserveStep:2 },
-    'A#14':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:15, totalM2Col:16, reserveStartCol:5, reserveStep:2 },
-    'A#15':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:17, totalM2Col:18, reserveStartCol:5, reserveStep:2 },
-    'A#16':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:17, totalM2Col:18, reserveStartCol:5, reserveStep:2 },
-    'A#171':  { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:19, totalM2Col:20, reserveStartCol:5, reserveStep:2 },
-    'A#17':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:19, totalM2Col:20, reserveStartCol:5, reserveStep:2 },
-    'A#18':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:33, totalM2Col:34, reserveStartCol:4, reserveStep:2 },
-    'A#19':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:17, totalM2Col:18, reserveStartCol:5, reserveStep:2 },
-    'A#20':   { itemCol:0, lotCol:1, boxCol:3, m2Col:4, totalBoxCol:17, totalM2Col:18, reserveStartCol:5, reserveStep:2 },
-    'D#,E#,선일,성원특': { itemCol:0, lotCol:1, boxCol:4, m2Col:5, totalBoxCol:16, totalM2Col:17, reserveStartCol:6, reserveStep:2 },
-    '바람1':  { itemCol:1, lotCol:2, boxCol:4, m2Col:5, totalBoxCol:13, totalM2Col:14, reserveStartCol:6, reserveStep:2 },
-};
-
 // ============================================================
 //  재고현황 실시간 시계
 // ============================================================
@@ -1555,12 +1554,16 @@ function startStockClock() {
     stockClockInterval = setInterval(tick, 1000);
 }
 
+// ============================================================
+//  엑셀 업로드 → Apps Script → 구글시트 STOCK 반영
+// ============================================================
 function initExcelUpload() {
-    const fileInput = document.getElementById('excelUpload');
-    const uploadBtn = document.getElementById('uploadBtn');
-    const statusEl = document.getElementById('uploadStatus');
+    const fileInput  = document.getElementById('excelUpload');
+    const uploadBtn  = document.getElementById('uploadBtn');
+    const statusEl   = document.getElementById('uploadStatus');
     if (!fileInput || !uploadBtn || !statusEl) return;
 
+    // 마지막 업로드 시간 복원 — GAS에서 공유 시간 가져오기
     const lastEl = document.getElementById('lastUploadTime');
     if (lastEl) {
         lastEl.textContent = '🕐 업로드 시간 확인 중...';
@@ -1577,6 +1580,7 @@ function initExcelUpload() {
                 }
             })
             .catch(() => {
+                // GAS 실패 시 localStorage 폴백
                 const local = localStorage.getItem('baram_last_upload');
                 if (local) lastEl.textContent = `🕐 마지막 업로드: ${local}`;
                 else lastEl.textContent = '';
@@ -1585,6 +1589,7 @@ function initExcelUpload() {
 
     let selectedFile = null;
 
+    // 파일 선택 시
     fileInput.addEventListener('change', function () {
         selectedFile = this.files[0];
         if (!selectedFile) return;
@@ -1593,6 +1598,7 @@ function initExcelUpload() {
         uploadBtn.style.display = 'inline-flex';
     });
 
+    // 업로드 버튼 클릭 시
     uploadBtn.addEventListener('click', async function () {
         if (!selectedFile) return;
 
@@ -1602,14 +1608,30 @@ function initExcelUpload() {
         statusEl.textContent = '엑셀을 읽는 중...';
 
         try {
+            // 1. SheetJS로 엑셀 읽기
             const arrayBuffer = await selectedFile.arrayBuffer();
             const workbook = XLSX.read(arrayBuffer, { type: 'array' });
 
-            // ============================================================
-            // 1. STOCK 시트용 데이터 추출 (기존 방식 유지)
-            // ============================================================
+            // 2. 모든 시트를 STOCK 형식으로 정제해서 합치기
             const matrixData = [];
-            matrixData.push(['품번', 'LOT 및 입고일', 'BOX', '현재고(㎡)', '총 BOX', '총 재고(㎡)']);
+            matrixData.push(['시트명', '품번', 'LOT 및 입고일', 'BOX', '현재고(㎡)', '총 BOX', '총 재고(㎡)']);
+
+            const COL_MAP = {
+                'C#14':           { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:15, totalM2Col:16, reserveStartCol:5 },
+                'C#15':           { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:19, totalM2Col:20, reserveStartCol:5 },
+                'C#18':           { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:15, totalM2Col:16, reserveStartCol:5 },
+                'C#19':           { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:15, totalM2Col:16, reserveStartCol:5 },
+                'A#14':           { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:15, totalM2Col:16, reserveStartCol:5 },
+                'A#15':           { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:17, totalM2Col:18, reserveStartCol:5 },
+                'A#16':           { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:17, totalM2Col:18, reserveStartCol:5 },
+                'A#171':          { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:19, totalM2Col:20, reserveStartCol:5 },
+                'A#17':           { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:19, totalM2Col:20, reserveStartCol:5 },
+                'A#18':           { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:33, totalM2Col:34, reserveStartCol:4 },
+                'A#19':           { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:17, totalM2Col:18, reserveStartCol:5 },
+                'A#20':           { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:17, totalM2Col:18, reserveStartCol:5 },
+                'D#,E#,선일,성원특': { itemCol:0, lotCol:1, boxCol:4, m2Col:5, totalBoxCol:16, totalM2Col:17, reserveStartCol:6 },
+                '바람1':           { itemCol:1, lotCol:2, boxCol:4, m2Col:5, totalBoxCol:13, totalM2Col:14, reserveStartCol:6 },
+            };
 
             function excelDateToStr(val) {
                 if (val === null || val === undefined) return '';
@@ -1624,112 +1646,113 @@ function initExcelUpload() {
                 return typeof v === 'number' ? Math.round(v * 100) / 100 : v;
             }
 
+            // defval을 쓰지 않고 raw 배열로 읽어서 직접 undefined 체크
+            // 보조행 = boxCol 위치에 값이 없거나 undefined (단가행은 BOX열이 항상 비어있음)
             function getCell(row, col) {
                 return row.length > col ? row[col] : undefined;
-            }
-
-            function hasValue(v) {
-                return v !== null && v !== undefined && v !== '';
             }
 
             function fillMergedItemCodes(ws, rows, itemCol) {
                 const merges = ws['!merges'] || [];
                 merges.forEach(range => {
                     if (range.s.c > itemCol || range.e.c < itemCol) return;
-                    const sourceRow = rows[range.s.r];
-                    const sourceVal = sourceRow ? sourceRow[itemCol] : '';
+                    const sourceRow = range.s.r;
+                    const sourceVal = getCell(rows[sourceRow] || [], itemCol);
                     if (!hasValue(sourceVal)) return;
+
                     for (let r = range.s.r; r <= range.e.r; r++) {
-                        if (rows[r] && !hasValue(rows[r][itemCol])) {
-                            rows[r][itemCol] = sourceVal;
-                        }
+                        if (!rows[r]) rows[r] = [];
+                        if (!hasValue(rows[r][itemCol])) rows[r][itemCol] = sourceVal;
                     }
                 });
             }
 
-            // STOCK 데이터 추출 (기존 방식)
-            const stockSheetNames = ['C#14', 'C#15', 'C#18', 'C#19', 'A#14', 'A#15', 'A#16', 'A#171', 'A#17', 'A#18', 'A#19', 'A#20', 'D#,E#,선일,성원특', '바람1'];
-            
-            stockSheetNames.forEach(sheetName => {
+            function hasValue(v) {
+                return v !== null && v !== undefined && v !== '';
+            }
+
+            function isSubRow(row, cm) {
+                const boxVal = getCell(row, cm.boxCol);
+                // BOX열에 값이 없으면 보조행
+                return !hasValue(boxVal);
+            }
+
+            workbook.SheetNames.forEach(sheetName => {
                 const ws = workbook.Sheets[sheetName];
-                if (!ws) return;
-               const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false });
+                // defval 없이 읽어서 빈 셀은 진짜 undefined로 남김
+                const rows = XLSX.utils.sheet_to_json(ws, { header:1, raw:true });
                 if (!rows || rows.length < 5) return;
-                
+
                 const cm = COL_MAP[sheetName];
                 if (!cm) return;
                 fillMergedItemCodes(ws, rows, cm.itemCol);
 
                 let currentItemCode = '';
-                let i = 4;
+                let i = 4; // 앞 4행 스킵
+
                 while (i < rows.length) {
                     const row = rows[i];
                     const boxVal = getCell(row, cm.boxCol);
+
+                    // BOX열 없으면 보조행 → 스킵
                     if (!hasValue(boxVal)) { i++; continue; }
-                    const rawItem = String(getCell(row, cm.itemCol) || '').replace(/\n|\r/g, ' ').trim();
-                    if (rawItem === '수종' || rawItem === '시리즈' || rawItem.includes('재고사항') || rawItem.includes('재고사황') || rawItem.includes('재고상황')) { i++; continue; }
+
+                    // 품번 셀
+                    const rawItem = String(getCell(row, cm.itemCol) || '').replace(/\n|\r/g,' ').trim();
+
+                    // 헤더/타이틀 스킵
+                    if (rawItem === '수종' || rawItem === '시리즈' ||
+                        rawItem.includes('재고사항') || rawItem.includes('재고사황') || rawItem.includes('재고상황')) {
+                        i++; continue;
+                    }
+
+                    // 품번 추출
                     let itemCode = '';
                     const codeMatch = rawItem.match(/[A-Z]#\s*\d+\w*/);
-                    if (codeMatch) { itemCode = codeMatch[0].replace(/\s+/g, ''); }
-                    else if (rawItem && rawItem !== 'NEW') { itemCode = rawItem; }
+                    if (codeMatch) {
+                        itemCode = codeMatch[0].replace(/\s+/g,'');
+                    } else if (rawItem && rawItem !== 'NEW') {
+                        itemCode = rawItem;
+                    }
                     if (itemCode) currentItemCode = itemCode;
                     if (!currentItemCode) { i++; continue; }
+
+                    // 차수/LOT
                     const chasu = excelDateToStr(getCell(row, cm.lotCol));
+
+                    // 다음 행이 보조행이면 소비 → 날짜/텍스트
                     let subInfo = '';
-                    if (i + 1 < rows.length) {
-                        const nextRow = rows[i + 1];
-                        const nextBoxVal = getCell(nextRow, cm.boxCol);
-                        if (!hasValue(nextBoxVal)) {
-                            const subVal = getCell(nextRow, cm.lotCol);
-                            subInfo = excelDateToStr(subVal);
-                            i++;
-                        }
+                    if (i + 1 < rows.length && isSubRow(rows[i+1], cm)) {
+                        const subVal = getCell(rows[i+1], cm.lotCol);
+                        subInfo = excelDateToStr(subVal);
+                        i++; // 보조행 소비
                     }
+
+                    // LOT 조합
                     let lotStr = chasu || '-';
                     if (subInfo) lotStr = `${chasu}(${subInfo})`;
-                    const m2Val = getCell(row, cm.m2Col);
+
+                    // 수치
+                    const m2Val    = getCell(row, cm.m2Col);
                     const totalBox = getCell(row, cm.totalBoxCol);
-                    const totalM2 = getCell(row, cm.totalM2Col);
-                    const box = typeof boxVal === 'number' ? boxVal : (parseFloat(String(boxVal)) || 0);
-                    const curM2 = roundNum(typeof m2Val === 'number' ? m2Val : (parseFloat(String(m2Val || 0)) || 0));
+                    const totalM2  = getCell(row, cm.totalM2Col);
+
+                    const box    = typeof boxVal === 'number' ? boxVal : (parseFloat(String(boxVal)) || 0);
+                    const curM2  = roundNum(typeof m2Val === 'number' ? m2Val : (parseFloat(String(m2Val||0)) || 0));
                     const totBox = typeof totalBox === 'number' ? roundNum(totalBox) : (hasValue(totalBox) ? totalBox : '-');
-                    const totM2 = typeof totalM2 === 'number' ? roundNum(totalM2) : (hasValue(totalM2) ? totalM2 : '-');
-                    matrixData.push([currentItemCode, lotStr, box, curM2, totBox, totM2]);
+                    const totM2  = typeof totalM2  === 'number' ? roundNum(totalM2)  : (hasValue(totalM2)  ? totalM2  : '-');
+
+                    matrixData.push([sheetName, currentItemCode, lotStr, box, curM2, totBox, totM2]);
                     i++;
                 }
             });
 
-            if (matrixData.length <= 1) throw new Error('엑셀에서 읽을 재고 데이터가 없습니다.');
+            if (matrixData.length <= 1) throw new Error('엑셀에서 읽을 데이터가 없습니다.');
 
-            // ============================================================
-            // 2. 모든 시트를 구글시트에 통째로 복사 (새로운 기능)
-            // ============================================================
-            const allSheetsData = [];
-            
-            workbook.SheetNames.forEach(sheetName => {
-                // STOCK용 시트명 목록에 있으면 재고 데이터는 별도로 뺐으니, 원본 시트도 복사
-                const ws = workbook.Sheets[sheetName];
-                if (!ws) return;
-                
-                // 시트 데이터를 2차원 배열로 변환
-                const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: '' });
-                if (!rows || rows.length === 0) return;
-                
-                // 빈 행 제거 (선택 사항)
-                const filteredRows = rows.filter(row => {
-                    if (!row || row.length === 0) return false;
-                    return row.some(cell => cell !== undefined && cell !== null && cell !== '');
-                });
-                
-                if (filteredRows.length === 0) return;
-                
-                allSheetsData.push({
-                    sheetName: sheetName,
-                    data: filteredRows
-                });
-            });
+            // ── 예약 데이터는 GAS에서 구글시트 직접 파싱으로 처리 ──
 
-            if (!confirm('파일을 업로드 하시겠습니까?\n\n- STOCK 시트: 재고 데이터 갱신\n- 기타 시트: 엑셀 내용으로 통째로 덮어쓰기')) {
+            // 업로드 전 확인
+            if (!confirm('파일을 업로드 하시겠습니까?')) {
                 statusEl.textContent = '업로드가 취소되었습니다.';
                 uploadBtn.textContent = '⬆ 구글시트에 반영';
                 uploadBtn.disabled = false;
@@ -1737,33 +1760,61 @@ function initExcelUpload() {
             }
 
             statusEl.textContent = '구글시트에 전송 중...';
-            
-            const res = await fetch(GAS_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify({
-                    spreadsheetId: SHEET_CONFIG.ID,
-                    sheetName: SHEET_CONFIG.STOCK,
-                    matrixData: matrixData,
-                    allSheetsData: allSheetsData  // 모든 시트 통째로 복사할 데이터
-                })
-            });
-            
-            const result = await res.json();
-            
+
+            // 3. 시트별로 나눠서 순차 전송 (페이로드 초과 방지)
+            // matrixData를 시트명 기준으로 분리
+            const header = matrixData[0]; // 헤더행
+            const bySheet = {};
+            for (let i = 1; i < matrixData.length; i++) {
+                const sn = matrixData[i][0]; // 0번 컬럼 = 시트명
+                if (!bySheet[sn]) bySheet[sn] = [header];
+                bySheet[sn].push(matrixData[i]);
+            }
+
+            const sheetNames = Object.keys(bySheet);
+            let lastResult = null;
+
+            for (let si = 0; si < sheetNames.length; si++) {
+                const sn = sheetNames[si];
+                statusEl.textContent = `전송 중... (${si + 1}/${sheetNames.length}) ${sn}`;
+                const chunk = bySheet[sn];
+
+                const res = await fetch(GAS_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify({
+                        spreadsheetId: SHEET_CONFIG.ID,
+                        sheetName: SHEET_CONFIG.STOCK,
+                        matrixData: chunk,
+                        isFirst: si === 0,                        // 첫 전송: STOCK 클리어 후 헤더+데이터
+                        isLast:  si === sheetNames.length - 1     // 마지막 전송: RESERVE 파싱 실행
+                    })
+                });
+                lastResult = await res.json();
+                if (lastResult.status !== 'success') throw new Error(lastResult.message || '서버 오류');
+            }
+
+            const result = lastResult;
+
             if (result.status === 'success') {
-                alert('파일이 정상적으로 업로드되었습니다.\n\n- STOCK 시트: 재고 갱신 완료\n- 모든 시트: 엑셀 내용으로 복사 완료');
+                alert('파일이 정상적으로 업로드되었습니다.');
+
+                // 마지막 업로드 시간 — GAS에 기록 (모든 기기 공유)
                 const now = new Date();
                 const pad = n => String(n).padStart(2, '0');
                 const timeStr = `${now.getFullYear()}.${pad(now.getMonth()+1)}.${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-                localStorage.setItem('baram_last_upload', timeStr);
+                localStorage.setItem('baram_last_upload', timeStr); // 폴백용
                 const lastEl = document.getElementById('lastUploadTime');
                 if (lastEl) lastEl.textContent = `🕐 마지막 업로드: ${timeStr}`;
                 statusEl.textContent = '✅ 구글시트 반영 완료!';
                 statusEl.style.color = '#00a854';
                 uploadBtn.textContent = '✅ 완료';
-                showToast('모든 데이터가 구글시트에 반영되었습니다!');
+                showToast('재고 데이터가 구글시트에 반영되었습니다!');
+
+                // 테이블 새로고침
                 setTimeout(() => fetchStockData(), 1500);
+
+                // 버튼 초기화
                 setTimeout(() => {
                     uploadBtn.textContent = '⬆ 구글시트에 반영';
                     uploadBtn.disabled = false;
@@ -1776,6 +1827,7 @@ function initExcelUpload() {
             } else {
                 throw new Error(result.message || '서버 오류');
             }
+
         } catch (err) {
             console.error('업로드 오류:', err);
             statusEl.textContent = '❌ 실패: ' + err.message;
@@ -1813,25 +1865,44 @@ async function fetchStockData() {
 async function openItemDetail(itemCode) {
     const modal  = document.getElementById('itemDetailModal');
     const title  = document.getElementById('itemDetailTitle');
+    const stockEl   = document.getElementById('itemDetailStock');
     const orderEl   = document.getElementById('itemDetailOrder');
     const arrivalEl = document.getElementById('itemDetailArrival');
     const reserveEl = document.getElementById('itemDetailReserve');
 
     title.textContent = itemCode;
-    orderEl.innerHTML = arrivalEl.innerHTML = reserveEl.innerHTML =
+    stockEl.innerHTML = orderEl.innerHTML = arrivalEl.innerHTML = reserveEl.innerHTML =
         '<span style="color:#aaa;">불러오는 중...</span>';
     modal.style.display = 'flex';
 
     const noData = '<span style="color:#aaa;">정보 없음</span>';
     const code = itemCode.trim().toUpperCase();
 
-    // 발주현황, 입고예정일, 예약일정(RESERVE 시트) 병렬 fetch
+    // 발주현황, 입고예정일, 예약일정, STOCK 병렬 fetch
     try {
-        const [orderRows, arrivalRows, reserveRows] = await Promise.all([
+        const [orderRows, arrivalRows, reserveRows, stockRows] = await Promise.all([
             fetchSheetJson(SHEET_CONFIG.ORDER).catch(() => null),
             fetchSheetJson(SHEET_CONFIG.ARRIVAL).catch(() => null),
             fetchSheetJson(SHEET_CONFIG.RESERVE).catch(() => null),
+            fetchSheetJson(SHEET_CONFIG.STOCK).catch(() => null),
         ]);
+
+        // ── 잔여 총재고 합산 — STOCK 시트에서 해당 품번 총재고(㎡) 합산 ──
+        // STOCK 헤더: [품번(0), LOT(1), BOX(2), 현재고(3), 총BOX(4), 총재고(5)]
+        const stockFiltered = (stockRows || []).filter(r => {
+            const c = r?.c?.[0];
+            const v = c ? String(c.v !== undefined ? c.v : '').trim().toUpperCase() : '';
+            return v === code;
+        });
+        if (stockFiltered.length) {
+            let totalM2 = 0;
+            stockFiltered.forEach(r => {
+                const c5 = r.c[5]; // 총재고(㎡) 컬럼
+                const v = c5 ? parseFloat(c5.v !== undefined ? c5.v : 0) : 0;
+                if (!isNaN(v)) totalM2 += v;
+            });
+            stockEl.innerHTML = `<span style="font-size:22px;">${totalM2.toFixed(2)} ㎡</span>`;
+        } else { stockEl.innerHTML = noData; }
 
         // ── 발주현황 ──
         const orders = (orderRows || []).filter(r => {
@@ -1878,7 +1949,7 @@ async function openItemDetail(itemCode) {
         } else { reserveEl.innerHTML = noData; }
 
     } catch (e) {
-        orderEl.innerHTML = arrivalEl.innerHTML = reserveEl.innerHTML =
+        stockEl.innerHTML = orderEl.innerHTML = arrivalEl.innerHTML = reserveEl.innerHTML =
             `<span style="color:#d63031;">오류: ${e.message}</span>`;
     }
 }
@@ -2131,7 +2202,7 @@ function createInvoiceItem(index) {
             <input type="number" id="invQty${index}" class="inv-qty-input" step="0.01" min="0">
           </div>
         </div>
-        <div class="inv-loss-row" style="display:grid; grid-template-columns:1.8fr 1fr auto; gap:8px; align-items:end; margin-bottom:12px;">
+        <div class="inv-loss-row" style="display:grid; grid-template-columns:1.8fr 1fr; gap:8px; align-items:end; margin-bottom:12px;">
           <div class="inv-field" style="margin-bottom:0;">
             <div class="inv-label">가격 기준</div>
             <select id="invParty${index}" class="inv-party-select">
@@ -2139,15 +2210,9 @@ function createInvoiceItem(index) {
               <option value="vendor">업체가</option>
             </select>
           </div>
-          <div class="inv-field" style="margin-bottom:0; min-width:72px;">
+          <div class="inv-field" style="margin-bottom:0;">
             <div class="inv-label">로스율(%)</div>
             <input type="number" id="invLoss${index}" class="inv-loss-input" step="0.1" min="0" placeholder="0">
-          </div>
-          <div class="inv-field inv-loss-chk-wrap" style="margin-bottom:0; display:flex; flex-direction:column; align-items:center; justify-content:flex-end;">
-            <div class="inv-label" style="text-align:center;">로스 적용</div>
-            <div style="height:38px; display:flex; align-items:center;">
-              <input type="checkbox" id="invLossOn${index}" class="inv-loss-chk" style="width:18px; height:18px; cursor:pointer; border-radius:4px;">
-            </div>
           </div>
         </div>
       </div>
@@ -2236,13 +2301,12 @@ function getInvItemFromBox(box) {
     const qty   = parseFloat(box.querySelector('.inv-qty-input')?.value) || 0;
     const party = box.querySelector('.inv-party-select')?.value || 'consumer';
     const lossRate = parseFloat(box.querySelector('.inv-loss-input')?.value) || 0;
-    const lossOn   = box.querySelector('.inv-loss-chk')?.checked || false;
     if (!code) return null;
     const p = products.find(x => x.code === code);
     if (!p) return null;
 
-    const PY_FACTOR = 3.305785; // 1평 = 3.305785㎡
-    const lossMultiplier = (lossOn && lossRate > 0) ? (1 + lossRate / 100) : 1;
+    const PY_FACTOR = 3.24; // 1평 = 3.24㎡ (계산기 탭과 동일)
+    const lossMultiplier = lossRate > 0 ? (1 + lossRate / 100) : 1;
 
     let displayQty, unitPrice, total;
 
@@ -2287,36 +2351,7 @@ function fmtNum(n) {
 }
 
 function renderInvoice() {
-    // JIBOKDEUKMARU 너비를 INVOICE 텍스트와 정확히 맞추기
-    requestAnimationFrame(() => {
-        const titleEl = document.querySelector('.inv-title');
-        const brandEl = document.querySelector('.inv-brand');
-        if (titleEl && brandEl) {
-            // INVOICE 텍스트만의 너비 측정 (subtitle span 제외)
-            const subtitleSpan = titleEl.querySelector('span');
-            const subtitleText = subtitleSpan ? subtitleSpan.textContent : '';
-            if (subtitleSpan) subtitleSpan.textContent = '';
-            const invoiceW = titleEl.offsetWidth;
-            if (subtitleSpan) subtitleSpan.textContent = subtitleText;
 
-            if (invoiceW > 0) {
-                // 브랜드 자연 너비 측정 (현재 letter-spacing 리셋 후)
-                brandEl.style.letterSpacing = '0px';
-                brandEl.style.transform = 'none';
-                const naturalW = brandEl.scrollWidth;
-                if (naturalW > 0 && invoiceW > naturalW) {
-                    // letter-spacing으로 늘리기: 각 글자 사이에 균등 배분
-                    const chars = 'JIBOKDEUKMARU'.length;
-                    const spacing = (invoiceW - naturalW) / chars;
-                    brandEl.style.letterSpacing = spacing.toFixed(2) + 'px';
-                } else if (naturalW > invoiceW) {
-                    // 너무 크면 scaleX로 축소
-                    brandEl.style.transform = 'scaleX(' + (invoiceW / naturalW).toFixed(4) + ')';
-                    brandEl.style.transformOrigin = 'left center';
-                }
-            }
-        }
-    });
     // 메타
     document.getElementById('pvBillTo').textContent  = document.getElementById('invBillTo')?.value  || '—';
     document.getElementById('pvWorkDate').textContent = document.getElementById('invWorkDate')?.value || '—';
@@ -2547,6 +2582,40 @@ async function saveInvoiceImage() {
         if (el2) { el2.style.transform = ''; el2.style.marginBottom = ''; }
         showToast('저장 실패: ' + e.message);
     }
+}
+</script>
+<!-- ── PWA Service Worker 등록 ── -->
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js')
+      .then(reg => {
+        console.log('[PWA] Service Worker 등록 완료:', reg.scope);
+
+        // 새 버전 감지 → 업데이트 알림
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing;
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              // 업데이트 토스트 표시
+              const toast = document.createElement('div');
+              toast.style.cssText = [
+                'position:fixed', 'bottom:80px', 'left:50%',
+                'transform:translateX(-50%)',
+                'background:#111', 'color:#fff',
+                'padding:12px 20px', 'border-radius:24px',
+                'font-size:13px', 'z-index:9999',
+                'display:flex', 'gap:12px', 'align-items:center',
+                'box-shadow:0 4px 20px rgba(0,0,0,0.3)'
+              ].join(';');
+              toast.innerHTML = `새 버전이 있어요! <button onclick="location.reload()" style="background:#fff;color:#111;border:none;border-radius:12px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer;">새로고침</button>`;
+              document.body.appendChild(toast);
+            }
+          });
+        });
+      })
+      .catch(err => console.warn('[PWA] Service Worker 등록 실패:', err));
+  });
 }
 </script>
 </body>
