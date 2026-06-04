@@ -1614,144 +1614,34 @@ function initExcelUpload() {
             const arrayBuffer = await selectedFile.arrayBuffer();
             const workbook = XLSX.read(arrayBuffer, { type: 'array' });
 
-            // 2. 모든 시트를 STOCK 형식으로 정제해서 합치기
-            const matrixData = [];
-            matrixData.push(['시트명', '품번', 'LOT 및 입고일', 'BOX', '현재고(㎡)', '총 BOX', '총 재고(㎡)']);
+            // 2. 각 시트의 5행부터 전체 데이터를 시트명별로 읽기
+            // { 시트명: [[row5데이터],[row6데이터],...] }
+            const sheetDataMap = {};
 
-            const COL_MAP = {
-                'C#14':           { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:15, totalM2Col:16, reserveStartCol:5 },
-                'C#15':           { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:19, totalM2Col:20, reserveStartCol:5 },
-                'C#18':           { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:15, totalM2Col:16, reserveStartCol:5 },
-                'C#19':           { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:15, totalM2Col:16, reserveStartCol:5 },
-                'A#14':           { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:15, totalM2Col:16, reserveStartCol:5 },
-                'A#15':           { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:17, totalM2Col:18, reserveStartCol:5 },
-                'A#16':           { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:17, totalM2Col:18, reserveStartCol:5 },
-                'A#171':          { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:19, totalM2Col:20, reserveStartCol:5 },
-                'A#17':           { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:19, totalM2Col:20, reserveStartCol:5 },
-                'A#18':           { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:33, totalM2Col:34, reserveStartCol:4 },
-                'A#19':           { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:17, totalM2Col:18, reserveStartCol:5 },
-                'A#20':           { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:17, totalM2Col:18, reserveStartCol:5 },
-                'D#,E#,선일,성원특': { itemCol:0, lotCol:1, boxCol:4, m2Col:5, totalBoxCol:16, totalM2Col:17, reserveStartCol:6 },
-                '바람1':           { itemCol:1, lotCol:2, boxCol:4, m2Col:5, totalBoxCol:13, totalM2Col:14, reserveStartCol:6 },
-            };
-
-            function excelDateToStr(val) {
+            function cellToStr(val) {
                 if (val === null || val === undefined) return '';
-                if (typeof val === 'number' && val > 40000) {
+                if (typeof val === 'number' && val > 40000 && Number.isInteger(val)) {
+                    // 엑셀 날짜 숫자 → 문자열 변환
                     const d = new Date((val - 25569) * 86400 * 1000);
                     return `${d.getUTCFullYear()}/${String(d.getUTCMonth()+1).padStart(2,'0')}/${String(d.getUTCDate()).padStart(2,'0')}`;
                 }
-                return String(val).replace(/\n|\r/g,' ').trim();
-            }
-
-            function roundNum(v) {
-                return typeof v === 'number' ? Math.round(v * 100) / 100 : v;
-            }
-
-            // defval을 쓰지 않고 raw 배열로 읽어서 직접 undefined 체크
-            // 보조행 = boxCol 위치에 값이 없거나 undefined (단가행은 BOX열이 항상 비어있음)
-            function getCell(row, col) {
-                return row.length > col ? row[col] : undefined;
-            }
-
-            function fillMergedItemCodes(ws, rows, itemCol) {
-                const merges = ws['!merges'] || [];
-                merges.forEach(range => {
-                    if (range.s.c > itemCol || range.e.c < itemCol) return;
-                    const sourceRow = range.s.r;
-                    const sourceVal = getCell(rows[sourceRow] || [], itemCol);
-                    if (!hasValue(sourceVal)) return;
-
-                    for (let r = range.s.r; r <= range.e.r; r++) {
-                        if (!rows[r]) rows[r] = [];
-                        if (!hasValue(rows[r][itemCol])) rows[r][itemCol] = sourceVal;
-                    }
-                });
-            }
-
-            function hasValue(v) {
-                return v !== null && v !== undefined && v !== '';
-            }
-
-            function isSubRow(row, cm) {
-                const boxVal = getCell(row, cm.boxCol);
-                // BOX열에 값이 없으면 보조행
-                return !hasValue(boxVal);
+                if (typeof val === 'number') return val;
+                return String(val).replace(/\r/g,'').trim();
             }
 
             workbook.SheetNames.forEach(sheetName => {
                 const ws = workbook.Sheets[sheetName];
-                // defval 없이 읽어서 빈 셀은 진짜 undefined로 남김
-                const rows = XLSX.utils.sheet_to_json(ws, { header:1, raw:true });
+                const rows = XLSX.utils.sheet_to_json(ws, { header:1, raw:true, defval:'' });
                 if (!rows || rows.length < 5) return;
 
-                const cm = COL_MAP[sheetName];
-                if (!cm) return;
-                fillMergedItemCodes(ws, rows, cm.itemCol);
-
-                let currentItemCode = '';
-                let i = 4; // 앞 4행 스킵
-
-                while (i < rows.length) {
-                    const row = rows[i];
-                    const boxVal = getCell(row, cm.boxCol);
-
-                    // BOX열 없으면 보조행 → 스킵
-                    if (!hasValue(boxVal)) { i++; continue; }
-
-                    // 품번 셀
-                    const rawItem = String(getCell(row, cm.itemCol) || '').replace(/\n|\r/g,' ').trim();
-
-                    // 헤더/타이틀 스킵
-                    if (rawItem === '수종' || rawItem === '시리즈' ||
-                        rawItem.includes('재고사항') || rawItem.includes('재고사황') || rawItem.includes('재고상황')) {
-                        i++; continue;
-                    }
-
-                    // 품번 추출
-                    let itemCode = '';
-                    const codeMatch = rawItem.match(/[A-Z]#\s*\d+\w*/);
-                    if (codeMatch) {
-                        itemCode = codeMatch[0].replace(/\s+/g,'');
-                    } else if (rawItem && rawItem !== 'NEW') {
-                        itemCode = rawItem;
-                    }
-                    if (itemCode) currentItemCode = itemCode;
-                    if (!currentItemCode) { i++; continue; }
-
-                    // 차수/LOT
-                    const chasu = excelDateToStr(getCell(row, cm.lotCol));
-
-                    // 다음 행이 보조행이면 소비 → 날짜/텍스트
-                    let subInfo = '';
-                    if (i + 1 < rows.length && isSubRow(rows[i+1], cm)) {
-                        const subVal = getCell(rows[i+1], cm.lotCol);
-                        subInfo = excelDateToStr(subVal);
-                        i++; // 보조행 소비
-                    }
-
-                    // LOT 조합
-                    let lotStr = chasu || '-';
-                    if (subInfo) lotStr = `${chasu}(${subInfo})`;
-
-                    // 수치
-                    const m2Val    = getCell(row, cm.m2Col);
-                    const totalBox = getCell(row, cm.totalBoxCol);
-                    const totalM2  = getCell(row, cm.totalM2Col);
-
-                    const box    = typeof boxVal === 'number' ? boxVal : (parseFloat(String(boxVal)) || 0);
-                    const curM2  = roundNum(typeof m2Val === 'number' ? m2Val : (parseFloat(String(m2Val||0)) || 0));
-                    const totBox = typeof totalBox === 'number' ? roundNum(totalBox) : (hasValue(totalBox) ? totalBox : '-');
-                    const totM2  = typeof totalM2  === 'number' ? roundNum(totalM2)  : (hasValue(totalM2)  ? totalM2  : '-');
-
-                    matrixData.push([sheetName, currentItemCode, lotStr, box, curM2, totBox, totM2]);
-                    i++;
-                }
+                // 5행(인덱스4)부터 읽기
+                const dataRows = rows.slice(4).map(row =>
+                    row.map(cell => cellToStr(cell))
+                );
+                if (dataRows.length > 0) sheetDataMap[sheetName] = dataRows;
             });
 
-            if (matrixData.length <= 1) throw new Error('엑셀에서 읽을 데이터가 없습니다.');
-
-            // ── 예약 데이터는 GAS에서 구글시트 직접 파싱으로 처리 ──
+            if (Object.keys(sheetDataMap).length === 0) throw new Error('엑셀에서 읽을 데이터가 없습니다.');
 
             // 업로드 전 확인
             if (!confirm('파일을 업로드 하시겠습니까?')) {
@@ -1764,6 +1654,7 @@ function initExcelUpload() {
             statusEl.textContent = '구글시트에 전송 중...';
 
             // 3. 전체 데이터 한 번에 전송
+            // 3. 전체 데이터 한 번에 전송
             statusEl.textContent = '구글시트에 전송 중...';
 
             const res = await fetch(GAS_URL, {
@@ -1771,8 +1662,7 @@ function initExcelUpload() {
                 headers: { 'Content-Type': 'text/plain' },
                 body: JSON.stringify({
                     spreadsheetId: SHEET_CONFIG.ID,
-                    sheetName: SHEET_CONFIG.STOCK,
-                    matrixData: matrixData
+                    sheetDataMap: sheetDataMap
                 })
             });
             const result = await res.json();
