@@ -527,9 +527,9 @@ function unlock() {
             <div>
               <div class="calc-field-label">입력 기준</div>
               <select id="calcInputModeSelect">
-                <option value="py">평수로 입력</option>
-                <option value="sqm">㎡로 입력</option>
-                <option value="box">박스 수로 입력</option>
+                <option value="py">평</option>
+                <option value="sqm">m²</option>
+                <option value="box">BOX</option>
               </select>
             </div>
             <div>
@@ -705,9 +705,9 @@ function unlock() {
                         <th>품번</th>
                         <th>LOT 및 입고일</th>
                         <th>BOX</th>
-                        <th>현재고(㎡)</th>
+                        <th>현재고(PY)</th>
                         <th>총 BOX</th>
-                        <th>총 재고(㎡)</th>
+                        <th>총 재고(PY)</th>
                     </tr>
                 </thead>
                 <tbody id="stockTableBody">
@@ -789,7 +789,7 @@ function unlock() {
   font-size:11px; color:#0f172a; border:1px solid #111; border-radius:0;
   box-shadow:0 8px 24px rgba(0,0,0,.08); position:relative;
 }
-.inv-brand { display:block; margin-left:7px; font-family:'Times New Roman',serif; font-size:13px; color:#111; line-height:1; letter-spacing:8px; white-space:nowrap; }
+.inv-brand { display:block; margin-left:7px; font-family:'Times New Roman',serif; font-size:13px; color:#111; line-height:1; letter-spacing:13.2px; white-space:nowrap; }
 /* INVOICE 타이틀: G마켓 산스 Bold 31.5pt → px환산 ~42px, 실제 크기는 56px 유지하되 font-family만 교체 */
 .inv-title { margin:8px 0 94px 7px; font-family:'GmarketSans','G마켓 산스','Gmarket Sans','NanumGothicExtraBold','맑은 고딕',sans-serif; font-size:56px; font-weight:900; letter-spacing:-1px; line-height:.86; color:#242424; }
 .inv-meta-grid { display:grid; grid-template-columns:1fr auto; gap:20px; align-items:end; margin-bottom:38px; padding-bottom:5px; border-bottom:1px solid #9a9a9a; }
@@ -976,44 +976,7 @@ function unlock() {
       </div>
     </div>
 
-    <div class="inv-label" style="margin-bottom:8px; font-size:12px; color:#333; font-weight:700;">제품 1</div>
-    <div class="inv-item-box" id="invItem1Box" data-inv-item="1">
-      <div class="inv-field">
-        <div class="inv-label">제품 선택</div>
-        <select id="invProduct1" class="inv-product-select">
-          <option value="">-- 제품 선택 --</option>
-        </select>
-      </div>
-      <div class="inv-grid-2">
-        <div class="inv-field">
-          <div class="inv-label">단위</div>
-          <select id="invUnit1" class="inv-unit-select">
-            <option value="M2">M2</option>
-            <option value="PY">PY</option>
-            <option value="BOX">BOX</option>
-          </select>
-        </div>
-        <div class="inv-field">
-          <div class="inv-label">수량 입력</div>
-          <input type="number" id="invQty1" class="inv-qty-input" step="0.01" min="0">
-        </div>
-      </div>
-      <div class="inv-loss-row" style="display:grid; grid-template-columns:1.8fr 1fr; gap:8px; align-items:end; margin-bottom:12px;">
-        <div class="inv-field" style="margin-bottom:0;">
-          <div class="inv-label">가격 기준</div>
-          <select id="invParty1" class="inv-party-select">
-            <option value="consumer">소비자가</option>
-            <option value="vendor">업체가</option>
-          </select>
-        </div>
-        <div class="inv-field" style="margin-bottom:0;">
-          <div class="inv-label">로스율(%)</div>
-          <input type="number" id="invLoss1" class="inv-loss-input" step="0.1" min="0" placeholder="0">
-        </div>
-      </div>
-    </div>
-
-    <div id="invExtraItems"></div>
+    <div id="invAllItems"></div>
     <button type="button" id="invAddItemBtn" class="secondary inv-add-item">+ 제품 추가</button>
 
     <div class="inv-field">
@@ -1222,10 +1185,27 @@ function roundTo(value, base) { return Math.round(value / base) * base; }
 function ceilTo(value, base) { return Math.ceil(value / base) * base; }
 function formatQuoteDate(dateObj = new Date()) { const y = dateObj.getFullYear(); const m = String(dateObj.getMonth() + 1).padStart(2,'0'); const d = String(dateObj.getDate()).padStart(2,'0'); return `견적일 : ${y}-${m}-${d}`; }
 function updateQuoteDate(dateObj = new Date()) { const el = $('quoteDate'); if(el) el.textContent = formatQuoteDate(dateObj); }
+function getBoxDiscount(code) {
+  // # 없는 품번은 null 반환 (기존값 그대로)
+  if (!code || !code.includes('#')) return null;
+  const after = code.split('#').pop();
+  // 앞 두 자리만 읽음 (예: '1801' → '18', '1501' → '15')
+  const num = parseInt(after.slice(0, 2), 10);
+  if (!Number.isFinite(num)) return null;
+  if (num <= 15) return 35000;
+  if (num <= 18) return 45000;
+  return 50000; // 19 이상
+}
 function getUnitValue(product, party, unit, priceMode=state.priceMode) {
   if (unit === 'py') return priceMode === 'material' ? product[party].material : product[party].py;
   if (unit === 'sqm') return priceMode === 'material' ? ceilTo(product[party].material / 3.24, 100) : product[party].sqm;
-  if (unit === 'box') return product[party].box;
+  if (unit === 'box') {
+    const discount = getBoxDiscount(product.code);
+    if (discount === null) return product[party].box; // # 없는 품번: 기존값
+    // BOX 단가는 항상 시공비포함 평단가(py) 기준으로 차감 후 계산, 백원단위 올림
+    const pyPrice = product[party].py;
+    return ceilTo((pyPrice - discount) / 3.24 * product.box_m2, 100);
+  }
   return product[party][unit];
 }
 function modeText() { return state.priceMode === 'material' ? '자재 금액 (VAT 별도)' : '시공비 포함 (VAT 별도)'; }
@@ -1260,9 +1240,9 @@ function renderLeftTable() {
   });
   table.appendChild(frag);
 }
-function buildRightHeader() { const row=$('rightHeaderRow'); if(!row) return; const cols=[]; cols.push('<th style="width:14%;">품번</th>'); cols.push('<th style="width:26%;">스펙</th>'); if (state.audience === 'both') { cols.push('<th style="width:13%;">소비자가(평)</th>'); cols.push('<th style="width:13%;">업체가(평)</th>'); } else { cols.push('<th style="width:16%;">가격(평)</th>'); } if (state.box) cols.push('<th style="width:18%;">박스당 단가</th>'); if (state.sqm) cols.push('<th style="width:12%;">m² 단가</th>'); row.innerHTML=cols.join(''); }
+function buildRightHeader() { const row=$('rightHeaderRow'); if(!row) return; const cols=[]; cols.push('<th style="width:14%;">품번</th>'); cols.push('<th style="width:26%;">스펙</th>'); if (state.audience === 'both') { cols.push('<th style="width:13%;">소비자가(평)</th>'); cols.push('<th style="width:13%;">업체가(평)</th>'); } else { cols.push('<th style="width:16%;">가격(평)</th>'); } if (state.box) cols.push('<th style="width:18%;">박스당 단가</th>'); if (state.sqm) cols.push('<th style="width:14%;">m² 단가</th>'); row.innerHTML=cols.join(''); }
 function boxMeta(partyProduct, party) { const amount = fmt(getUnitValue(partyProduct, party, 'box')); return `<div>${amount}</div><div class="muted meta-box">${partyProduct.sheets_per_box}장 / ${partyProduct.box_m2}㎡</div>`; }
-function renderRightTable() { const table=$('rightTable'); if(!table) return; table.innerHTML=''; const frag=document.createDocumentFragment(); const showCompany = state.audience === 'both'; state.selected.forEach(code=>{ const p=products.find(x=>x.code===code); if(!p) return; const tr=document.createElement('tr'); const cells=[]; cells.push(`<td>${p.code}</td>`); cells.push(`<td class="spec-right">${p.spec}</td>`); if (showCompany) { cells.push(`<td>${fmt(getUnitValue(p,'consumer','py'))}</td>`); cells.push(`<td>${fmt(getUnitValue(p,'vendor','py'))}</td>`); } else { cells.push(`<td>${fmt(getUnitValue(p,'consumer','py'))}</td>`); } if (state.box) { cells.push(`<td>${boxMeta(p, state.audience === 'consumer' ? 'consumer' : 'vendor')}</td>`); } if (state.sqm) { cells.push(`<td>${fmt(getUnitValue(p, state.audience === 'consumer' ? 'consumer' : 'vendor', 'sqm'))}</td>`); } tr.innerHTML=cells.join(''); tr.addEventListener('dblclick',()=>removeCode(p.code)); frag.appendChild(tr); }); table.appendChild(frag); }
+function renderRightTable() { const table=$('rightTable'); if(!table) return; table.innerHTML=''; const frag=document.createDocumentFragment(); const showCompany = state.audience === 'both'; state.selected.forEach(code=>{ const p=products.find(x=>x.code===code); if(!p) return; const tr=document.createElement('tr'); const cells=[]; cells.push(`<td>${p.code}</td>`); cells.push(`<td class="spec-right">${p.spec}</td>`); if (showCompany) { cells.push(`<td>${fmt(getUnitValue(p,'consumer','py'))}</td>`); cells.push(`<td>${fmt(getUnitValue(p,'vendor','py'))}</td>`); } else { cells.push(`<td>${fmt(getUnitValue(p,'consumer','py'))}</td>`); } if (state.box) { cells.push(`<td>${boxMeta(p, state.audience === 'consumer' ? 'consumer' : 'vendor')}</td>`); } if (state.sqm) { cells.push(`<td style="white-space:nowrap; font-size:12px;">${fmt(getUnitValue(p, state.audience === 'consumer' ? 'consumer' : 'vendor', 'sqm'))}</td>`); } tr.innerHTML=cells.join(''); tr.addEventListener('dblclick',()=>removeCode(p.code)); frag.appendChild(tr); }); table.appendChild(frag); }
 function buildGuideText() { const lines=['안녕하세요.','단가 안내드립니다.','']; state.selected.forEach(code=>{ const p=products.find(x=>x.code===code); if(!p) return; lines.push(`품번 : ${p.code}`); lines.push(`스펙 : ${p.spec}`); if (state.audience === 'both') { lines.push(`소비자가 : ${fmt(getUnitValue(p,'consumer','py'))}`); lines.push(`업체가 : ${fmt(getUnitValue(p,'vendor','py'))}`); } else { lines.push(`가격 : ${fmt(getUnitValue(p,'consumer','py'))}`); } if (state.box) { lines.push(`박스당 단가 : ${fmt(getUnitValue(p, state.audience === 'consumer' ? 'consumer' : 'vendor', 'box'))} (${p.sheets_per_box}장 / ${p.box_m2}㎡)`); } if (state.sqm) { lines.push(`m² 단가 : ${fmt(getUnitValue(p, state.audience === 'consumer' ? 'consumer' : 'vendor', 'sqm'))}`); } lines.push(''); }); lines.push(`■ ${modeText()}`); if (state.priceMode === 'material') { lines.push('■ 운임비 별도'); } else { lines.push('■ 공과잡비 별도 (운임비, 양중비 등)'); } lines.push('■ 평당 단순 단가이며, 실제 견적과 차이가 있을 수 있습니다.'); return lines.join('\n'); }
 function renderMeta() { updateQuoteDate(); $('noticeLinePrimary').textContent = modeText(); $('noticeLineSecondary').textContent = state.priceMode === 'material' ? '운임비 별도' : '공과잡비 별도 (운임비, 양중비 등)'; $('countText').textContent = `선택 ${state.selected.length} / ${state.maxSelected}`; $('audienceSelect').value = state.audience; $('priceModeSelect').value = state.priceMode; $('boxCheck').checked = !!state.box; $('sqmCheck').checked = !!state.sqm; const ta=$('copyText'); if(ta) ta.value = buildGuideText(); }
 function renderAll() { renderLeftTable(); buildRightHeader(); renderRightTable(); renderMeta(); }
@@ -1293,15 +1273,44 @@ function setTab(tabId) {
   resetViewportZoom();
 }
 
-function formatDecimal(value) {
+function formatDecimal(value, digits=3) {
   const num = Number(value);
   if (!Number.isFinite(num)) return '-';
-  const rounded = Math.round(num * 100) / 100;
-  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(2).replace(/\.00$/, '');
+  const factor = Math.pow(10, digits);
+  const rounded = Math.round(num * factor) / factor;
+  // 소수점 이하 불필요한 0 제거 (예: 2.100 → 2.1, 2.000 → 2)
+  return parseFloat(rounded.toFixed(digits)).toString();
 }
 function formatArea(py, sqm) { return `${py.toFixed(2)}평 / ${sqm.toFixed(2)}㎡`; }
 function calcVatIncluded(amount) { return Math.round(amount * 1.1); }
-function syncCalcInputUi() { const mode=$('calcInputModeSelect')?.value || 'py'; const label=$('calcInputLabel'); const input=$('calcAreaInput'); if(!label || !input) return; if(mode==='py'){ label.textContent='평수 입력'; input.placeholder='예: 25'; input.step='0.01'; } else if(mode==='sqm'){ label.textContent='㎡ 입력'; input.placeholder='예: 81'; input.step='0.01'; } else { label.textContent='박스 수 입력'; input.placeholder='예: 10'; input.step='1'; } }
+function syncCalcInputUi() {
+  const mode = $('calcInputModeSelect')?.value || 'py';
+  const label = $('calcInputLabel');
+  const input = $('calcAreaInput');
+  const priceModeSel = $('calcPriceModeSelect');
+  if (!label || !input) return;
+  if (mode === 'py') {
+    label.textContent = '평수 입력';
+    input.placeholder = '예: 25';
+    input.step = '0.01';
+    if (priceModeSel) { priceModeSel.disabled = false; priceModeSel.style.opacity = ''; }
+  } else if (mode === 'sqm') {
+    label.textContent = '㎡ 입력';
+    input.placeholder = '예: 81';
+    input.step = '0.01';
+    if (priceModeSel) { priceModeSel.disabled = false; priceModeSel.style.opacity = ''; }
+  } else {
+    // BOX 선택 시: 가격모드 자재별도 강제, 비활성화
+    label.textContent = 'BOX 수 입력';
+    input.placeholder = '예: 10';
+    input.step = '1';
+    if (priceModeSel) {
+      priceModeSel.value = 'material';
+      priceModeSel.disabled = true;
+      priceModeSel.style.opacity = '0.45';
+    }
+  }
+}
 function resetCalcResults() { ['resultAreaText','resultAreaSub','resultBoxes','resultBoxesSub','resultTotal','resultTotalVat','summaryProduct','summarySpec','summaryPy','summarySqm','summaryBox','summaryBoxMeta','summaryArea','summaryMode','summaryLoss'].forEach(id=>{ const el=$(id); if(el) el.textContent = id==='resultTotalVat' ? '(VAT 포함가) -' : '-'; }); $('calcNotice').textContent='평수, ㎡, 박스 수를 입력하면 결과가 자동으로 계산됩니다. 자재 별도 선택 시에는 박스당 단가 기준으로 계산됩니다.'; }
 
 function runCalculator() {
@@ -1324,7 +1333,7 @@ function runCalculator() {
     $('summaryPy').textContent = fmt(getUnitValue(p, party, 'py', priceMode));
     $('summarySqm').textContent = fmt(getUnitValue(p, party, 'sqm', priceMode));
     $('summaryBox').textContent = fmt(getUnitValue(p, party, 'box', priceMode));
-    $('summaryBoxMeta').textContent = `${p.sheets_per_box}장 / ${p.box_m2}㎡`;
+    $('summaryBoxMeta').textContent = `${p.sheets_per_box}장 / ${formatDecimal(p.box_m2, 3)}㎡`;
     $('summaryMode').textContent = `${party === 'consumer' ? '소비자가' : '업체가'} / ${priceMode === 'material' ? '자재 별도' : '시공비 포함'}`;
     $('summaryLoss').textContent = lossRate ? `${formatDecimal(lossRate)}%` : '0%';
     $('summaryArea').textContent = '입력 전';
@@ -1360,26 +1369,18 @@ function runCalculator() {
   const sqmPrice = getUnitValue(p, party, 'sqm', priceMode);
   const boxPrice = getUnitValue(p, party, 'box', priceMode);
 
-  // 4. 금액 계산: 박스로 환산된 면적(finalCoverageSqm)에 헤베 단가를 곱함
-  let total;
-  if (inputMode === 'py') {
-    // 평수 입력 시에도 최종 박스 면적 기준 평당가 적용
-    total = Math.round((Math.round(finalCoveragePy * 100) * pyPrice) / 100);
-  } else if (inputMode === 'sqm') {
-    // ㎡ 입력 시 최종 박스 면적 기준 헤베 단가 적용
-  total = Math.round((Math.round(finalCoverageSqm * 100) * sqmPrice) / 100);
-  } else {
-    total = calcBoxes * boxPrice;
-  }
+  // 4. 금액 계산: 모든 입력모드에서 calcBoxes * boxPrice 로 통일
+  //    → 평/m²/BOX 어떤 기준으로 입력해도 동일한 금액 보장
+  const total = calcBoxes * boxPrice;
 
   const totalVat = calcVatIncluded(total);
   const priceLabel = `${party === 'consumer' ? '소비자가' : '업체가'} / ${priceMode === 'material' ? '자재 별도' : '시공비 포함'}`;
 
   // UI 출력 업데이트
   $('resultAreaText').textContent = inputMode === 'py' ? `${raw}평` : inputMode === 'sqm' ? `${raw}㎡` : `${inputBoxes}박스`;
-  $('resultAreaSub').textContent = inputMode === 'py' ? `(${formatDecimal(inputSqm)}㎡)` : inputMode === 'sqm' ? `(${formatDecimal(inputPy)}평)` : `(${formatDecimal(inputSqm)}㎡)`;
+  $('resultAreaSub').textContent = inputMode === 'py' ? `(${formatDecimal(inputSqm, 3)}㎡)` : inputMode === 'sqm' ? `(${formatDecimal(inputPy, 3)}평)` : `(${formatDecimal(inputSqm, 3)}㎡)`;
   $('resultBoxes').textContent = `${calcBoxes}박스`;
-  $('resultBoxesSub').textContent = `(${formatDecimal(finalCoverageSqm)}㎡)`; // 박스가 커버하는 실제 면적
+  $('resultBoxesSub').textContent = `(${formatDecimal(finalCoverageSqm, 3)}㎡)`; // 박스가 커버하는 실제 면적
   $('resultTotal').textContent = fmt(total);
   $('resultTotalVat').textContent = `(VAT 포함가) ${fmt(totalVat)}`;
   $('summaryProduct').textContent = `${p.code} / ${p.name}`;
@@ -1387,11 +1388,11 @@ function runCalculator() {
   $('summaryPy').textContent = fmt(pyPrice);
   $('summarySqm').textContent = fmt(sqmPrice);
   $('summaryBox').textContent = fmt(boxPrice);
-  $('summaryBoxMeta').textContent = `${p.sheets_per_box}장 / ${p.box_m2}㎡`;
-  $('summaryArea').textContent = `박스 환산 면적 ${formatArea(finalCoveragePy, finalCoverageSqm)}`;
+  $('summaryBoxMeta').textContent = `${p.sheets_per_box}장 / ${formatDecimal(p.box_m2, 3)}㎡`;
+  $('summaryArea').textContent = `박스 환산 면적 ${formatDecimal(finalCoveragePy, 3)}평 / ${formatDecimal(finalCoverageSqm, 3)}㎡`;
   $('summaryMode').textContent = priceLabel;
   $('summaryLoss').textContent = lossRate ? `${formatDecimal(lossRate)}%` : '0%';
-  $('calcNotice').textContent = `필요 수량 ${calcBoxes}박스에 맞춰 면적을 ${formatDecimal(finalCoverageSqm)}㎡로 계산했습니다.`;
+  $('calcNotice').textContent = `필요 수량 ${calcBoxes}박스에 맞춰 면적을 ${formatDecimal(finalCoverageSqm, 3)}㎡로 계산했습니다.`;
 }
 
 function resetCalculator() { $('calcAudienceSelect').value='consumer'; $('calcPriceModeSelect').value='included'; $('calcInputModeSelect').value='py'; $('calcAreaInput').value=''; if($('calcLossRateInput')) $('calcLossRateInput').value=''; syncCalcInputUi(); resetCalcResults(); runCalculator(); }
@@ -1422,7 +1423,8 @@ async function startApp() {
         console.error('데이터 로드 실패:', e.message);
     }
     initApp();
-    fillInvoiceSelects(); // 견적서 제품 셀렉트 초기 세팅
+    // 견적서 제품 1 자동 생성
+    addInvoiceItem();
 }
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', startApp);
@@ -1761,40 +1763,19 @@ function initExcelUpload() {
 
             statusEl.textContent = '구글시트에 전송 중...';
 
-            // 3. 시트별로 나눠서 순차 전송 (페이로드 초과 방지)
-            // matrixData를 시트명 기준으로 분리
-            const header = matrixData[0]; // 헤더행
-            const bySheet = {};
-            for (let i = 1; i < matrixData.length; i++) {
-                const sn = matrixData[i][0]; // 0번 컬럼 = 시트명
-                if (!bySheet[sn]) bySheet[sn] = [header];
-                bySheet[sn].push(matrixData[i]);
-            }
+            // 3. 전체 데이터 한 번에 전송
+            statusEl.textContent = '구글시트에 전송 중...';
 
-            const sheetNames = Object.keys(bySheet);
-            let lastResult = null;
-
-            for (let si = 0; si < sheetNames.length; si++) {
-                const sn = sheetNames[si];
-                statusEl.textContent = `전송 중... (${si + 1}/${sheetNames.length}) ${sn}`;
-                const chunk = bySheet[sn];
-
-                const res = await fetch(GAS_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain' },
-                    body: JSON.stringify({
-                        spreadsheetId: SHEET_CONFIG.ID,
-                        sheetName: SHEET_CONFIG.STOCK,
-                        matrixData: chunk,
-                        isFirst: si === 0,                        // 첫 전송: STOCK 클리어 후 헤더+데이터
-                        isLast:  si === sheetNames.length - 1     // 마지막 전송: RESERVE 파싱 실행
-                    })
-                });
-                lastResult = await res.json();
-                if (lastResult.status !== 'success') throw new Error(lastResult.message || '서버 오류');
-            }
-
-            const result = lastResult;
+            const res = await fetch(GAS_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({
+                    spreadsheetId: SHEET_CONFIG.ID,
+                    sheetName: SHEET_CONFIG.STOCK,
+                    matrixData: matrixData
+                })
+            });
+            const result = await res.json();
 
             if (result.status === 'success') {
                 alert('파일이 정상적으로 업로드되었습니다.');
@@ -1890,19 +1871,19 @@ async function openItemDetail(itemCode) {
         // ── 잔여 총재고 합산 — STOCK 시트에서 해당 품번 총재고(㎡) 합산 ──
         // STOCK 헤더: [품번(0), LOT(1), BOX(2), 현재고(3), 총BOX(4), 총재고(5)]
         const stockFiltered = (stockRows || []).filter(r => {
-            const c = r?.c?.[0];
-            const v = c ? String(c.v !== undefined ? c.v : '').trim().toUpperCase() : '';
-            return v === code;
-        });
-        if (stockFiltered.length) {
-            let totalM2 = 0;
-            stockFiltered.forEach(r => {
-                const c5 = r.c[5]; // 총재고(㎡) 컬럼
-                const v = c5 ? parseFloat(c5.v !== undefined ? c5.v : 0) : 0;
-                if (!isNaN(v)) totalM2 += v;
-            });
-            stockEl.innerHTML = `<span style="font-size:22px;">${totalM2.toFixed(2)} ㎡</span>`;
-        } else { stockEl.innerHTML = noData; }
+    const c = r?.c?.[0];
+    const v = c ? String(c.v !== undefined ? c.v : '').trim().toUpperCase() : '';
+    return v === code;
+});
+if (stockFiltered.length) {
+    let totalBox = 0;
+    stockFiltered.forEach(r => {
+        const c4 = r.c[4]; // 총BOX 컬럼 (index 4)
+        const v = c4 ? parseFloat(c4.v !== undefined ? c4.v : 0) : 0;
+        if (!isNaN(v)) totalBox += v;
+    });
+    stockEl.innerHTML = `<span style="font-size:22px;">${totalBox} BOX</span>`;
+} else { stockEl.innerHTML = noData; }
 
         // ── 발주현황 ──
         const orders = (orderRows || []).filter(r => {
@@ -1942,7 +1923,7 @@ async function openItemDetail(itemCode) {
             reserveEl.innerHTML = reserveItems.map(item =>
                 `<div style="display:grid; grid-template-columns:1fr 60px 100px; gap:8px; padding:7px 4px; border-bottom:1px solid #f0f0f0; align-items:center;">
                     <span style="font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.company}</span>
-                    <span style="color:#555; text-align:center; font-size:13px;">${item.area ? item.area + '평' : '—'}</span>
+                    <span style="color:#555; text-align:center; font-size:13px;">${item.area ? item.area + ' <span style="color:#d63031; font-weight:600;">BOX</span>' : '—'}</span>
                     <span style="color:#888; font-size:12px; text-align:right; white-space:nowrap;">${item.date || '—'}</span>
                 </div>`
             ).join('');
@@ -1974,17 +1955,22 @@ function parseReserveFromSheet(rows, targetCode) {
 
     // 날짜 오름차순 정렬 (26.6.10 형태 → 비교 가능하게 정규화)
     function parseDateScore(d) {
-        if (!d) return 99999999;
-        // "26.7월", "26.6초", "26.6~7월" 같은 텍스트 날짜 처리
-        const m = d.match(/(\d{2})\.(\d{1,2})[.월]?(\d{0,2})/);
-        if (m) {
-            const yy = parseInt(m[1]) || 99;
-            const mm = parseInt(m[2]) || 99;
-            const dd = parseInt(m[3]) || 0;
-            return yy * 10000 + mm * 100 + dd;
-        }
-        return 99999999;
+    if (!d) return 99999999;
+    
+    // 1. 먼저 오타 보정: 연속된 점(..)을 하나(.)로 변환
+    let cleaned = String(d).replace(/\.{2,}/g, '.');  // .. → .
+    cleaned = cleaned.replace(/\.{2,}/g, '.');        // 혹시 3개 이상도 처리
+    
+    // 2. 정규식으로 파싱
+    const m = cleaned.match(/(\d{2})\.(\d{1,2})[.월]?(\d{0,2})/);
+    if (m) {
+        const yy = parseInt(m[1]) || 99;
+        const mm = parseInt(m[2]) || 99;
+        const dd = parseInt(m[3]) || 0;
+        return yy * 10000 + mm * 100 + dd;
     }
+    return 99999999;
+}
     results.sort((a, b) => parseDateScore(a.date) - parseDateScore(b.date));
     return results;
 }
@@ -2056,27 +2042,28 @@ function renderStockTable(rows) {
         const tr = document.createElement('tr');
         tr.className = (isGrayGroup ? 'bg-group-gray' : 'bg-group-white') + (isNewGroup ? ' group-first' : '');
 
-        const m2Raw = String(d.totalM2);
-        const m2Display = (!d.totalM2 || d.totalM2 === '-' || d.totalM2 === '0')
-            ? `<span style="color:#d63031;font-weight:bold;">-</span>`
-            : (m2Raw.includes('㎡') ? m2Raw : `${m2Raw} ㎡`);
+        const totalRaw = String(d.totalM2);
+      
+const totalDisplay = (!d.totalM2 || d.totalM2 === '-' || d.totalM2 === '0')
+    ? `<span style="color:#d63031;font-weight:bold;">-</span>`
+    : (totalRaw.includes('PY') ? totalRaw.replace(' PY', '') : `${totalRaw}`);
 
-        const totalBoxDisplay = (!d.totalBox || d.totalBox === '-' || d.totalBox === '0')
-            ? `<span style="color:#d63031;font-weight:bold;">-</span>`
-            : d.totalBox;
+const totalBoxDisplay = (!d.totalBox || d.totalBox === '-' || d.totalBox === '0')
+    ? `<span style="color:#d63031;font-weight:bold;">-</span>`
+    : d.totalBox;
 
-        tr.innerHTML = `
-            <td style="text-align:center; cursor:pointer;">${
-                displayItemCode
-                    ? `<span class="item-code-link" data-code="${d.itemCode}" style="text-decoration:underline; text-underline-offset:3px;">${displayItemCode}</span>`
-                    : ''
-            }</td>
-            <td style="text-align:center;">${d.lotInfo}</td>
-            <td style="text-align:center;">${d.boxSpec}</td>
-            <td style="text-align:center;">${d.curStock}</td>
-            <td class="total-value" style="text-align:center;">${totalBoxDisplay}</td>
-            <td class="total-value" style="text-align:center;">${m2Display}</td>
-        `;
+tr.innerHTML = `
+    <td style="text-align:center; cursor:pointer;">${
+        displayItemCode
+            ? `<span class="item-code-link" data-code="${d.itemCode}" style="text-decoration:underline; text-underline-offset:3px;">${displayItemCode}</span>`
+            : ''
+    }</td>
+    <td style="text-align:center;">${d.lotInfo}</td>
+    <td style="text-align:center;">${d.boxSpec}</td>
+    <td style="text-align:center;">${d.curStock}</td>
+    <td class="total-value" style="text-align:center;">${totalBoxDisplay}</td>
+    <td class="total-value" style="text-align:center;">${totalDisplay}</td>
+`;
 
         // 품번 클릭 → 상세 모달
         if (isNewGroup) {
@@ -2150,9 +2137,7 @@ let invoiceInited = false;
 function fillInvoiceSelects() {
     document.querySelectorAll('.inv-product-select').forEach((sel, idx) => {
         const prev = sel.value;
-        sel.innerHTML = idx === 0
-            ? '<option value="">-- 제품 선택 --</option>'
-            : '<option value="">-- 없음 --</option>';
+        sel.innerHTML = '<option value="">-- 제품 선택 --</option>';
         products.forEach(p => {
             const opt = document.createElement('option');
             opt.value = p.code;
@@ -2174,13 +2159,27 @@ function bindInvoiceFieldEvents(root=document) {
 }
 
 function nextInvoiceItemIndex() {
-    return document.querySelectorAll('[data-inv-item]').length + 1;
+    return document.querySelectorAll('#invAllItems [data-inv-item]').length + 1;
+}
+
+function renumberInvoiceItems() {
+    document.querySelectorAll('#invAllItems .inv-extra-item-wrap').forEach((wrap, i) => {
+        const num = i + 1;
+        const label = wrap.querySelector('.inv-item-num-label');
+        if (label) label.textContent = '제품 ' + num;
+        const box = wrap.querySelector('[data-inv-item]');
+        if (box) box.dataset.invItem = num;
+    });
 }
 
 function createInvoiceItem(index) {
     const wrap = document.createElement('div');
+    wrap.className = 'inv-extra-item-wrap';
     wrap.innerHTML = `
-      <div class="inv-label" style="margin-bottom:8px; font-size:12px; color:#333; font-weight:700;">제품 ${index}</div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <div class="inv-label" style="font-size:12px; color:#333; font-weight:700; margin-bottom:0;">제품 ${index}</div>
+        <button type="button" class="inv-remove-item secondary" style="min-height:28px; padding:0 10px; font-size:11px; border-radius:8px;">✕ 삭제</button>
+      </div>
       <div class="inv-item-box" data-inv-item="${index}">
         <div class="inv-field">
           <div class="inv-label">제품 선택</div>
@@ -2217,13 +2216,19 @@ function createInvoiceItem(index) {
         </div>
       </div>
     `.trim();
+    // 삭제 버튼 이벤트
+    wrap.querySelector('.inv-remove-item').addEventListener('click', () => {
+        wrap.remove();
+        renumberInvoiceItems();
+        renderInvoice();
+    });
     return wrap;
 }
 
 function addInvoiceItem() {
     const index = nextInvoiceItemIndex();
     const item = createInvoiceItem(index);
-    document.getElementById('invExtraItems')?.appendChild(item);
+    document.getElementById('invAllItems')?.appendChild(item);
     fillInvoiceSelects();
     bindInvoiceFieldEvents(item);
     renderInvoice();
@@ -2310,30 +2315,33 @@ function getInvItemFromBox(box) {
 
     let displayQty, unitPrice, total;
 
+    // 공통: 항상 박스 수 기준으로 계산 (계산기 탭과 동일한 공식)
+    const boxPrice = getUnitValue(p, party, 'box', 'material');
+
     if (unit === 'BOX') {
         // BOX 입력: 박스수 그대로
-        const boxes   = Math.ceil(qty);
-        unitPrice     = getUnitValue(p, party, 'box', 'material');
-        displayQty    = boxes;
-        total         = Math.round(boxes * unitPrice);
+        const boxes = Math.ceil(qty);
+        unitPrice   = boxPrice;
+        displayQty  = boxes;
+        total       = boxes * unitPrice;
     } else if (unit === 'M2') {
-        // M2 입력 → 계산기처럼 박스 올림 후 실제 커버 ㎡ 출력
-        const sqmWithLoss     = qty * lossMultiplier;
-        const boxes           = Math.ceil(sqmWithLoss / p.box_m2);
-        const coverageSqm     = boxes * p.box_m2;          // 박스 올림 후 실제 커버 면적
-        unitPrice             = getUnitValue(p, party, 'sqm', 'included');
-        displayQty            = Math.round(coverageSqm * 100) / 100; // 소수점 2자리
-        total                 = Math.round(coverageSqm * unitPrice);
+        // M2 입력 → 박스 올림 → calcBoxes * boxPrice
+        const sqmWithLoss = qty * lossMultiplier;
+        const boxes       = Math.ceil(sqmWithLoss / p.box_m2);
+        const coverageSqm = boxes * p.box_m2;
+        unitPrice         = boxPrice;
+        displayQty        = Math.round(coverageSqm * 1000) / 1000; // 소수점 3자리
+        total             = boxes * unitPrice;
     } else {
-        // PY 입력 → 박스 올림 후 실제 커버 평수 출력
-        const sqmInput        = qty * PY_FACTOR;
-        const sqmWithLoss     = sqmInput * lossMultiplier;
-        const boxes           = Math.ceil(sqmWithLoss / p.box_m2);
-        const coverageSqm     = boxes * p.box_m2;
-        const coveragePy      = coverageSqm / PY_FACTOR;
-        unitPrice             = getUnitValue(p, party, 'py', 'included');
-        displayQty            = Math.round(coveragePy * 100) / 100;
-        total                 = Math.round((Math.round(coveragePy * 100) * unitPrice) / 100);
+        // PY 입력 → 박스 올림 → calcBoxes * boxPrice
+        const sqmInput    = qty * PY_FACTOR;
+        const sqmWithLoss = sqmInput * lossMultiplier;
+        const boxes       = Math.ceil(sqmWithLoss / p.box_m2);
+        const coverageSqm = boxes * p.box_m2;
+        const coveragePy  = coverageSqm / PY_FACTOR;
+        unitPrice         = boxPrice;
+        displayQty        = Math.round(coveragePy * 1000) / 1000; // 소수점 3자리
+        total             = boxes * unitPrice;
     }
 
     return {
@@ -2379,7 +2387,7 @@ function renderInvoice() {
             <td class="td-item" style="white-space:pre-line;">${item.name}</td>
             <td class="td-center">${item.size}</td>
             <td class="td-center">${item.unit}</td>
-            <td class="td-center">${item.qty % 1 === 0 ? item.qty : item.qty.toFixed(2)}</td>
+            <td class="td-center">${item.qty % 1 === 0 ? item.qty : parseFloat(item.qty.toFixed(3))}</td>
             <td class="td-won">₩</td>
             <td class="td-right">${fmtNum(item.unitPrice)}</td>
             <td class="td-won">₩</td>
