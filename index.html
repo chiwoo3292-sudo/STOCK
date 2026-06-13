@@ -92,13 +92,13 @@
   .calc-form { display:grid; gap:14px; }
   .form-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
   .calc-field-label { margin-bottom:8px; color:#666; font-size:12px; }
-  .calc-form select { height:46px; font-size:14px; }
-  .calc-area-input { height:72px !important; padding:0 18px !important; font-size:28px !important; font-weight:700; border-radius:16px !important; }
-  .calc-hint { margin-top:8px; font-size:12px; color:#888; }
+  .calc-form select { height:42px; font-size:14px; }
+  .calc-area-input { height:52px !important; padding:0 14px !important; font-size:20px !important; font-weight:700; border-radius:12px !important; }
+  .calc-hint { margin-top:6px; font-size:12px; color:#888; line-height:1.5; }
   .calc-result-grid { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:12px; }
   .result-card { border:1px solid #ececec; border-radius:16px; padding:16px; background:#fff; }
   .result-card h3 { margin:0 0 8px; font-size:12px; color:#666; font-weight:600; }
-  .result-value { font-size:28px; font-weight:800; line-height:1.2; }
+  .result-value { font-size:24px; font-weight:800; line-height:1.2; }
   .result-sub { margin-top:6px; font-size:13px; color:#666; line-height:1.4; }
   .calc-summary { display:grid; gap:12px; }
   .summary-list { border:1px solid #eee; border-radius:16px; overflow:hidden; }
@@ -119,16 +119,26 @@
 /* 품번 열 좌측 고정 (모바일 가로스크롤 시 품번 고정) */
 #stockTable th:first-child,
 #stockTable td:first-child {
-  position: sticky;
-  left: 0;
-  z-index: 5;
-  background-color: #f8f9fa;
-  border-right: 2px solid #ccc;
-  min-width: 70px;
+  position: sticky !important;
+  left: 0 !important;
+  background-color: #f8f9fa !important;
+  border-right: 2px solid #ccc !important;
+  min-width: 70px !important;
 }
-#stockTable thead th:first-child { z-index: 15; }
-#stockTable tr.bg-group-gray td:first-child { background-color: #f7f8fa; }
-#stockTable tr.bg-group-white td:first-child { background-color: #ffffff; }
+#stockTable th:first-child {
+  z-index: 15 !important;
+}
+#stockTable td:first-child {
+  z-index: 5 !important;
+}
+/* 내부 모든 요소 강제 초기화 */
+#stockTable td:first-child * {
+  position: static !important;
+  left: auto !important;
+  transform: none !important;
+}
+#stockTable tr.bg-group-gray td:first-child { background-color: #f7f8fa !important; }
+#stockTable tr.bg-group-white td:first-child { background-color: #ffffff !important; }
 
 /* 품번 그룹 교차 배경 */
 #stockTable tr.bg-group-gray { background-color: #f7f8fa; }
@@ -313,95 +323,33 @@
 </head>
 <body spellcheck="false">
 
-<div id="authOverlay">
-    <div class="auth-card">
-        <h2 style="margin: 0 0 10px; font-size: 20px; color: #111; font-weight: 700;">시스템 잠금</h2>
-        <p style="margin: 0 0 20px; font-size: 13px; color: #666;">프로그램을 이용하려면 비밀번호를 입력하세요.</p>
-        <input type="password" id="authPassword" placeholder="비밀번호 입력"
-               style="width:100%; height:48px; padding:0 12px; font-size:16px; border:1px solid #ddd; border-radius:12px; box-sizing:border-box; text-align:center; margin-bottom:14px;">
+
+<!-- ==================== 잠금 섹션 ==================== -->
+<section id="lockSection" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#f5f5f5; z-index:99999; display:flex; align-items:center; justify-content:center; overflow:hidden;">
+    <div style="background:#fff; padding:32px 24px; border-radius:18px; box-shadow:0 10px 30px rgba(0,0,0,0.1); text-align:center; width:90%; max-width:340px;">
+        <h2 style="margin:0 0 10px; font-size:20px; color:#111; font-weight:700;">시스템 잠금</h2>
+        <p style="margin:0 0 20px; font-size:13px; color:#666;">프로그램을 이용하려면 비밀번호를 입력하세요.</p>
+        <input type="password" id="authPassword" placeholder="비밀번호 입력" style="width:100%; height:48px; padding:0 12px; font-size:16px; border:1px solid #ddd; border-radius:12px; box-sizing:border-box; text-align:center; margin-bottom:14px;">
         <button id="authBtn" style="width:100%; height:48px; background:#111; color:#fff; border:none; border-radius:12px; font-size:16px; font-weight:700; cursor:pointer;">확인</button>
         <p id="authError" style="margin:10px 0 0; font-size:12px; color:#d63031; display:none; font-weight:bold;">❌ 비밀번호가 올바르지 않습니다.</p>
     </div>
-</div>
+</section>
 
-<script>
-(function() {
-    const PASS = '7736';
-    const SESSION_KEY = 'baram_auth';
-    const mainContainer = document.querySelector('.wrap');
-    const overlay = document.getElementById('authOverlay');
 
-    // iOS 줌인 해제: scale을 0.1로 찍었다가 1.0으로 복구하면 Safari가 재계산
 
-    function resetScale() {
-    const meta = document.querySelector('meta[name="viewport"]');
-    if (!meta) return;
-    meta.content = 'width=device-width, initial-scale=0.1, maximum-scale=3.0, user-scalable=yes';
-    setTimeout(() => {
-        meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=yes';
-    }, 50);
-}
 
-function unlock() {
-    const overlay = document.getElementById('authOverlay');
-    if (overlay) overlay.style.display = 'none';
-    if (mainContainer) mainContainer.style.display = 'block';
 
-    // 렌더링 직후 무조건 최상단으로 이동
-    setTimeout(() => {
-        window.scrollTo(0, 0);
-        document.body.scrollTop = 0; 
-        document.documentElement.scrollTop = 0;
-    }, 0);
-}
-
-    if (sessionStorage.getItem(SESSION_KEY) === '1') {
-        unlock();
-    } else {
-        if (mainContainer) mainContainer.style.display = 'none';
-    }
-
-    function checkPassword() {
-    const pwdInput = document.getElementById('authPassword');
-    const val = pwdInput.value;
-    const errorMsg = document.getElementById('authError');
-    
-    if (val === PASS) {
-        sessionStorage.setItem(SESSION_KEY, '1');
-        pwdInput.blur(); // 포커스 해제
-        unlock();
-    } else {
-        errorMsg.style.display = 'block';
-        pwdInput.value = '';
-        // 핵심: { preventScroll: true } 추가
-        pwdInput.focus({ preventScroll: true }); 
-    }
-}
-
-    document.getElementById('authBtn').addEventListener('click', checkPassword);
-    document.getElementById('authPassword').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') checkPassword();
-    });
-
-    document.addEventListener('contextmenu', e => e.preventDefault());
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'F12' ||
-            (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) ||
-            (e.ctrlKey && e.key === 'U')) {
-            e.preventDefault();
-            return false;
-        }
-    });
-})();
-</script>
-  
-<div class="wrap">
+<section id="mainSection" style="display:none;">
+  <div class="wrap">
   <div class="tabs no-capture">
   <button type="button" class="tab-btn active" data-tab="pricingTab">단가표</button>
   <button type="button" class="tab-btn" data-tab="calculatorTab">계산기</button>
   <button type="button" class="tab-btn" data-tab="memoTab">메모장</button>
   <button type="button" class="tab-btn" data-tab="stockTab">재고현황</button>
   <button type="button" class="tab-btn" data-tab="invoiceTab">견적서</button>
+  <button type="button" class="tab-btn" data-tab="floorplanTab">📐 면적분석</button>
+  <button type="button" class="tab-btn" data-tab="cardScanTab">📷 명함스캐닝</button>
+  <button type="button" class="tab-btn" data-tab="contactsTab">📋 연락처</button>
 </div>
 
   <section id="pricingTab" class="tab-panel active">
@@ -606,67 +554,6 @@ function unlock() {
       </div>
       <textarea id="workMemo" spellcheck="false" style="width:100%; flex: 1; min-height: 200px; padding:15px; border:1px solid #ddd; border-radius:8px; font-size:15px; line-height:1.6; resize:none; box-sizing:border-box; background:#fdfdfd; overflow-y:auto;" placeholder="업무 내용을 자유롭게 입력하세요..."></textarea>
     </div>
-
-    <script>
-    (function() {
-        const memoArea = document.getElementById('workMemo');
-        if (!memoArea) return;
-
-        // 1. 최초 저장 데이터 로드
-        memoArea.value = localStorage.getItem('baram_work_memo') || '';
-
-        // 타이핑 시 글씨를 쓰고 있는 '줄'을 감지해서 항상 내 눈높이(모니터 중간)에 맞춰주는 특수 마법 함수
-        const keepEyesLevel = () => {
-            // 메모 탭이 숨겨져 있을 때는 스크롤 보정을 완전히 정지 (비밀번호 화면 등 튕김 차단)
-            const panel = document.getElementById('memoTab');
-            if (!panel || panel.style.display === 'none') return;
-
-            // 현재 사용자가 글자를 입력하고 있는 커서의 줄 위치 계산
-            const cursorPosition = memoArea.selectionStart;
-            const textUpToCursor = memoArea.value.substring(0, cursorPosition);
-            const currentLineNum = textUpToCursor.split('\n').length;
-            const totalLines = memoArea.value.split('\n').length;
-
-            // 줄바꿈이 일어났거나 긴 글 하단을 수정 중일 때
-            const lineHeight = 24; // 글자 크기 대비 1줄당 대략적인 높이(px)
-            const currentCursorTop = currentLineNum * lineHeight;
-            const memoVisibleHeight = memoArea.clientHeight;
-
-            // 커서가 입력창 내에서 현재 보여지는 스크롤 화면의 하단 구역(70% 지점)을 넘어가려고 하면
-            if (currentCursorTop > memoArea.scrollTop + (memoVisibleHeight * 0.7)) {
-                // 커서 줄이 메모창의 정중앙에 배치되도록 메모장 내부 스크롤을 실시간으로 슥 올려줍니다.
-                memoArea.scrollTop = currentCursorTop - (memoVisibleHeight / 2);
-            }
-        };
-
-        // 2. 글자 입력할 때마다 저장 및 눈높이 추적 실행
-        memoArea.addEventListener('input', () => {
-            localStorage.setItem('baram_work_memo', memoArea.value);
-            keepEyesLevel();
-        });
-
-        // 방향키 이동, 엔터, 지우기, 마우스 클릭 시에도 완벽하게 내 시선을 추적합니다.
-        memoArea.addEventListener('click', keepEyesLevel);
-        memoArea.addEventListener('keyup', (e) => {
-            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'Backspace'].includes(e.key)) {
-                keepEyesLevel();
-            }
-        });
-
-        // 3. 상단 탭 버튼 클릭하여 메모장 켜질 때 스크롤 초기 세팅
-
-        // 전체 삭제 기능 연동
-        const clearBtn = document.getElementById('clearMemo');
-        if (clearBtn) {
-            clearBtn.addEventListener('click', () => {
-                if (confirm('메모장의 모든 내용을 정말로 삭제하시겠습니까?')) {
-                    memoArea.value = '';
-                    localStorage.removeItem('baram_work_memo');
-                }
-            });
-        }
-    })();
-    </script>
 </section>
 
 <section id="stockTab" class="tab-panel">
@@ -675,6 +562,9 @@ function unlock() {
         <!-- 타이틀 + 시계 -->
         <div style="text-align:center; margin-bottom:16px;">
             <h2 style="margin:0 0 5px; font-size:20px; font-weight:800;">실시간 자재 재고 현황</h2>
+            <div style="font-size:11px; color:#d63031; font-weight:600; margin-top:2px;">* 단종 제품의 경우 품번 적색 표기</div>
+            
+            
             <div id="stockClock" style="font-size:13px; color:#888; font-weight:500;"></div>
         </div>
 
@@ -694,6 +584,13 @@ function unlock() {
                 <button id="uploadBtn" type="button" style="display:none; height:38px; padding:0 18px; background:#111; color:#fff; border:none; border-radius:10px; font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap;">
                     ⬆ 구글시트에 반영
                 </button>
+            </div>
+        </div>
+
+        <!-- 재고부족 경고 배너 -->
+        <div id="stockAlertBanner" style="display:none; background:linear-gradient(90deg,#fff1f0,#fff8e1); border:2px solid #ff4d4d; border-radius:12px; padding:0 16px; margin-bottom:14px; overflow:hidden; height:48px; align-items:center; gap:0; box-shadow:0 2px 8px rgba(255,77,77,0.15);">
+            <div style="flex:1; overflow:hidden; position:relative; height:48px;">
+                <div id="stockAlertMarquee" style="position:absolute; white-space:nowrap; top:50%; transform:translateY(-50%); font-size:14px; font-weight:900; color:#d63031; letter-spacing:0.5px;"></div>
             </div>
         </div>
 
@@ -775,8 +672,8 @@ function unlock() {
 .inv-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 .inv-item-box { background:#f9f9f9; border:1px solid #eee; border-radius:12px; padding:14px; margin-bottom:10px; }
 .inv-item-title { font-size:12px; font-weight:700; color:#555; margin-bottom:10px; }
-.inv-actions { display:flex; gap:8px; margin-top:16px; flex-wrap:wrap; }
-.inv-actions button { flex:1; min-height:40px; font-size:13px; }
+.inv-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:16px; }
+.inv-actions button { min-height:40px; font-size:13px; }
 
 /* ---- 견적서 미리보기 ---- */
 .inv-preview-wrap { background:#fff; border:1px solid #e0e0e0; border-radius:18px; padding:20px; }
@@ -789,9 +686,9 @@ function unlock() {
   font-size:11px; color:#0f172a; border:1px solid #111; border-radius:0;
   box-shadow:0 8px 24px rgba(0,0,0,.08); position:relative;
 }
-.inv-brand { display:block; margin-left:7px; font-family:'Times New Roman',serif; font-size:13px; color:#111; line-height:1; letter-spacing:13.2px; white-space:nowrap; }
+.inv-brand { display:block; margin-left:10px; font-family:'Times New Roman',serif; font-size:10.6px; color:#111; line-height:1; letter-spacing:12px; white-space:nowrap; }
 /* INVOICE 타이틀: G마켓 산스 Bold 31.5pt → px환산 ~42px, 실제 크기는 56px 유지하되 font-family만 교체 */
-.inv-title { margin:8px 0 94px 7px; font-family:'GmarketSans','G마켓 산스','Gmarket Sans','NanumGothicExtraBold','맑은 고딕',sans-serif; font-size:56px; font-weight:900; letter-spacing:-1px; line-height:.86; color:#242424; }
+.inv-title { margin:8px 0 94px 7px; font-family:'GmarketSans','G마켓 산스','Gmarket Sans','NanumGothicExtraBold','맑은 고딕',sans-serif; font-size:50px; font-weight:900; letter-spacing:-1px; line-height:.86; color:#242424; }
 .inv-meta-grid { display:grid; grid-template-columns:1fr auto; gap:20px; align-items:end; margin-bottom:38px; padding-bottom:5px; border-bottom:1px solid #9a9a9a; }
 .inv-meta-grid .right-block { align-self:end; justify-self:end; width:auto; min-width:0; }
 .inv-meta-row { display:grid; grid-template-columns:62px 1fr; min-height:22px; align-items:center; }
@@ -813,7 +710,7 @@ function unlock() {
 .inv-table th:nth-child(1), .inv-table td:nth-child(1) { width:28% !important; }
 .inv-table th:nth-child(2), .inv-table td:nth-child(2) { width:19% !important; }
 .inv-table th:nth-child(2) { text-align:center; padding-left:8px; }
-.inv-table td:nth-child(2) { text-align:left; padding-left:22px; }
+.inv-table td:nth-child(2) { text-align:left; padding-left:8px; }
 .inv-table th:nth-child(3), .inv-table td:nth-child(3) { width:9% !important; text-align:center; }
 .inv-table th:nth-child(4), .inv-table td:nth-child(4) { width:12% !important; text-align:center; }
 .inv-table th:nth-child(5), .inv-table td:nth-child(5) { width:4% !important; }
@@ -867,8 +764,8 @@ function unlock() {
   .inv-field input, .inv-field select { height:40px !important; font-size:14px !important; }
 
   /* 하단 버튼 3개 — 한 줄 균등 배치 */
-  .inv-actions { display:grid !important; grid-template-columns:1fr 1fr 1fr !important; gap:4px !important; flex-wrap:unset !important; }
-  .inv-actions button { flex:unset !important; font-size:10px !important; padding:0 2px !important; white-space:nowrap !important; min-width:0 !important; min-height:40px !important; overflow:hidden !important; }
+  .inv-actions { display:grid !important; grid-template-columns:1fr 1fr !important; gap:4px !important; }
+  .inv-actions button { font-size:10px !important; padding:0 2px !important; white-space:nowrap !important; min-width:0 !important; min-height:40px !important; overflow:hidden !important; }
   /* 이모지 제거 후 텍스트만 표시 — 모바일 버튼 내부 이모지 숨김 */
   #invPrintBtn, #invSaveImgBtn { font-size:10px !important; letter-spacing:-0.3px !important; }
   /* 모바일: 이모지 숨기고 텍스트만 */
@@ -976,18 +873,42 @@ function unlock() {
       </div>
     </div>
 
+    <div style="display:flex; gap:16px; flex-wrap:wrap; margin:0 0 12px; padding:10px 14px; background:#f9f9f9; border:1px solid #eee; border-radius:12px;">
+      <label class="check-chip">
+        <input type="checkbox" id="invSplitCostCheck" />
+        재료비 / 인건비+부자재비 분리
+      </label>
+      <label class="check-chip">
+        <input type="checkbox" id="invMergeLaborCheck" />
+        인건비+부자재비 합산 표시
+      </label>
+      <label class="check-chip">
+        <input type="checkbox" id="invDraftCheck" />
+        가견적서
+      </label>
+      <label class="check-chip">
+        <input type="checkbox" id="invAdjustCheck" checked />
+        단수정리
+      </label>
+      <label class="check-chip">
+        <input type="checkbox" id="invBoxCalcCheck" />
+        박스기준 헤베계산
+      </label>
+    </div>
+
     <div id="invAllItems"></div>
     <button type="button" id="invAddItemBtn" class="secondary inv-add-item">+ 제품 추가</button>
 
     <div class="inv-field">
       <div class="inv-label">공과잡비</div>
-      <input type="number" id="invMisc" step="1000" min="0">
+      <input type="text" id="invMisc" inputmode="numeric" placeholder="예: 700,000원">
     </div>
 
     <div class="inv-actions">
       <button type="button" id="invPreviewBtn">미리보기 갱신</button>
       <button type="button" id="invPrintBtn" class="secondary"><span class="btn-icon">🖨</span><span class="btn-text"> 인쇄</span></button>
       <button type="button" id="invSaveImgBtn" class="secondary"><span class="btn-icon">💾</span><span class="btn-text"> 이미지저장</span></button>
+      <button type="button" id="invSavePdfBtn" class="secondary"><span class="btn-icon">📄</span><span class="btn-text"> PDF저장</span></button>
     </div>
   </div>
 
@@ -1017,8 +938,8 @@ function unlock() {
         <table class="inv-table" id="pvTable">
           <thead>
             <tr>
-              <th style="width:28%;">ITEM DESCRIPTION</th>
-              <th style="width:20%;">SIZE</th>
+              <th style="width:28%;">ITEM</th>
+              <th style="width:20%; text-align:left; padding-left:8px;">SIZE</th>
               <th style="width:8%;">UNIT</th>
               <th style="width:12%;">Q'TY</th>
               <th style="width:4%;"></th>
@@ -1069,7 +990,530 @@ function unlock() {
   </div>
 </div>
 </section>
-<div id="toast" class="toast">복사 완료</div>
+
+<!-- ==================== 평면도 면적분석 탭 ==================== -->
+<section id="floorplanTab" class="tab-panel" style="display:none;">
+  <div class="card" style="max-width:540px; margin:0 auto;">
+    <h2 style="margin-bottom:16px;">📐 평면도 면적 분석</h2>
+    <p style="font-size:13px; color:#888; margin-bottom:20px; line-height:1.6;">
+      평면도 이미지 또는 PDF를 업로드하면 AI가 분석하여<br>원목마루 시공 정물량(로스율 제외)을 추정해드립니다.
+    </p>
+
+    <!-- API 키 입력 -->
+    <div style="background:#fffbea; border:1px solid #ffe082; border-radius:12px; padding:14px; margin-bottom:16px;">
+      <div style="font-size:12px; color:#888; font-weight:700; margin-bottom:6px;">🔑 Google Gemini API 키</div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input type="password" id="fpApiKey" placeholder="AIza... 형태의 키 입력" style="flex:1; padding:8px 12px; border:1px solid #ddd; border-radius:8px; font-size:13px;">
+        <button type="button" id="fpApiKeySave" style="padding:8px 14px; background:#111; color:#fff; border:none; border-radius:8px; font-size:12px; cursor:pointer; white-space:nowrap;">저장</button>
+      </div>
+      <div id="fpApiKeyStatus" style="font-size:11px; color:#aaa; margin-top:5px;"></div>
+    </div>
+
+    <!-- 업로드 영역 -->
+    <div id="fpDropZone" style="border:2px dashed #ccc; border-radius:14px; padding:32px 20px; text-align:center; cursor:pointer; background:#fafafa; transition:border-color .2s; margin-bottom:16px;">
+      <div style="font-size:32px; margin-bottom:8px;">🏠</div>
+      <div style="font-size:14px; color:#555; font-weight:600;">클릭하거나 파일을 여기에 드래그하세요</div>
+      <div style="font-size:12px; color:#aaa; margin-top:6px;">JPG, PNG, PDF 지원</div>
+      <input type="file" id="fpFileInput" accept="image/*,application/pdf" style="display:none;">
+    </div>
+
+    <!-- 미리보기 -->
+    <div id="fpPreviewWrap" style="display:none; margin-bottom:16px; text-align:center;">
+      <img id="fpPreviewImg" style="max-width:100%; max-height:300px; border-radius:10px; border:1px solid #eee;">
+      <div id="fpFileName" style="font-size:12px; color:#aaa; margin-top:6px;"></div>
+    </div>
+
+    <!-- 추가 정보 입력 -->
+    <div style="background:#f9f9f9; border:1px solid #eee; border-radius:12px; padding:14px; margin-bottom:16px;">
+      <div style="font-size:12px; color:#666; font-weight:700; margin-bottom:10px;">추가 정보 (선택사항)</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+        <div>
+          <div style="font-size:11px; color:#999; margin-bottom:4px;">전용면적 (m²)</div>
+          <input type="number" id="fpAreaInput" placeholder="예: 114.5" style="width:100%; padding:8px 10px; border:1px solid #ddd; border-radius:8px; font-size:13px;">
+        </div>
+        <div>
+          <div style="font-size:11px; color:#999; margin-bottom:4px;">제외 공간</div>
+          <input type="text" id="fpExcludeInput" placeholder="예: 현관,욕실,실외기실" style="width:100%; padding:8px 10px; border:1px solid #ddd; border-radius:8px; font-size:13px;">
+        </div>
+      </div>
+    </div>
+
+    <button type="button" id="fpAnalyzeBtn" style="width:100%; padding:14px; background:#111; color:#fff; border:none; border-radius:12px; font-size:15px; font-weight:700; cursor:pointer; opacity:0.4; pointer-events:none;">
+      🔍 AI 면적 분석 시작
+    </button>
+
+    <!-- 결과 영역 -->
+    <div id="fpResultWrap" style="display:none; margin-top:20px;">
+      <div style="background:#f0f7ff; border:1px solid #c0d8ff; border-radius:14px; padding:20px;">
+        <div style="font-size:13px; font-weight:700; color:#3355cc; margin-bottom:12px;">📊 분석 결과</div>
+        <div id="fpResultText" style="font-size:14px; color:#333; line-height:1.8; white-space:pre-wrap;"></div>
+      </div>
+      <div style="margin-top:12px; font-size:11px; color:#aaa; text-align:center; line-height:1.6;">
+        ※ AI 추정값으로 실측 후 확인이 필요합니다.<br>현장 상황에 따라 실제 면적과 차이가 있을 수 있습니다.
+      </div>
+    </div>
+
+    <!-- 로딩 -->
+    <div id="fpLoading" style="display:none; text-align:center; padding:30px 0;">
+      <div style="font-size:24px; animation: spin 1s linear infinite; display:inline-block;">⏳</div>
+      <div style="font-size:13px; color:#888; margin-top:10px;">평면도를 분석 중입니다...</div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ==================== 명함스캐닝 탭 (갤러리 업로드 방식) ==================== -->
+<section id="cardScanTab" class="tab-panel" style="display:none;">
+  <div class="card" style="max-width:520px; margin:0 auto;">
+    <h2 style="margin-bottom:6px;">📷 명함 인식</h2>
+    <p style="font-size:13px; color:#888; margin-bottom:16px;">선명한 명함 사진을 업로드하면 텍스트를 자동 추출합니다.</p>
+
+    <!-- 업로드 버튼 + 미리보기 -->
+    <label for="cardUploadInput" style="display:block; width:100%; padding:14px; background:#111; color:#fff; border:none; border-radius:12px; font-size:15px; font-weight:700; cursor:pointer; text-align:center; margin-bottom:12px;">
+        📁 갤러리에서 명함 선택
+    </label>
+    <input type="file" id="cardUploadInput" accept="image/jpeg,image/png,image/webp" style="display:none;">
+
+    <!-- 이미지 미리보기 -->
+    <div id="cardPreviewWrap" style="display:none; margin-bottom:16px;">
+      <img id="cardPreviewImg" style="width:100%; border-radius:12px; border:1px solid #eee;">
+    </div>
+
+    <!-- OCR 로딩 -->
+    <div id="cardLoading" style="display:none; text-align:center; padding:24px; color:#888; font-size:13px; background:#f9f9f9; border-radius:12px; margin-bottom:16px;">
+      <div style="font-size:28px; margin-bottom:8px;">⏳</div>
+      <div id="cardLoadingText">텍스트 추출 중...</div>
+    </div>
+
+    <!-- 데이터 입력 폼 -->
+    <div id="cardFormWrap" style="display:none;">
+      <div style="background:#f0f7ff; border:1px solid #c0d8ff; border-radius:14px; padding:16px; margin-bottom:14px;">
+        <div style="font-size:12px; color:#3355cc; font-weight:700; margin-bottom:14px;">📝 정보 확인 및 수정 (모든 항목 직접 입력 가능)</div>
+
+        <div style="margin-bottom:12px;">
+          <div style="font-size:11px; color:#888; font-weight:700; margin-bottom:4px;">업체명</div>
+          <input type="text" id="cardCompany" placeholder="업체명 직접 입력" style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:8px; font-size:14px; background:#fff; box-sizing:border-box;">
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+          <div>
+            <div style="font-size:11px; color:#888; font-weight:700; margin-bottom:4px;">이름</div>
+            <input type="text" id="cardName" placeholder="직접 입력" style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:8px; font-size:14px; background:#fff; box-sizing:border-box;">
+          </div>
+          <div>
+            <div style="font-size:11px; color:#888; font-weight:700; margin-bottom:4px;">직급</div>
+            <input type="text" id="cardPosition" placeholder="직접 입력" style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:8px; font-size:14px; background:#fff; box-sizing:border-box;">
+          </div>
+        </div>
+        <div style="margin-bottom:12px;">
+          <div style="font-size:11px; color:#888; font-weight:700; margin-bottom:4px;">모바일 <span style="color:#aaa; font-weight:400;">(010-XXXX-XXXX)</span></div>
+          <input type="tel" id="cardMobile" placeholder="010-0000-0000" style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:8px; font-size:14px; background:#fff; box-sizing:border-box;">
+        </div>
+        <div>
+          <div style="font-size:11px; color:#888; font-weight:700; margin-bottom:4px;">유선번호 <span style="color:#aaa; font-weight:400;">(XX-XXXX-XXXX)</span></div>
+          <input type="tel" id="cardPhone" placeholder="02-0000-0000" style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:8px; font-size:14px; background:#fff; box-sizing:border-box;">
+        </div>
+      </div>
+
+      <details style="margin-bottom:14px;">
+        <summary style="font-size:12px; color:#aaa; cursor:pointer; padding:6px 0;">원본 추출 텍스트 보기</summary>
+        <div id="cardRawText" style="font-size:11px; color:#666; background:#f9f9f9; border-radius:8px; padding:10px; margin-top:6px; white-space:pre-wrap; line-height:1.6; max-height:150px; overflow-y:auto;"></div>
+      </details>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+        <button type="button" id="cardRetakeBtn" style="padding:13px; background:#888; color:#fff; border:none; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer;">🔄 다시 선택</button>
+        <button type="button" id="cardSaveBtn" style="padding:13px; background:#111; color:#fff; border:none; border-radius:10px; font-size:15px; font-weight:700; cursor:pointer;">💾 저장</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
+<!-- ==================== 연락처 탭 ==================== -->
+<section id="contactsTab" class="tab-panel" style="display:none;">
+  <div class="card" style="max-width:600px; margin:0 auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+      <h2 style="margin:0;">📋 연락처</h2>
+      <button type="button" id="contactsRefreshBtn" style="padding:6px 14px; background:#111; color:#fff; border:none; border-radius:8px; font-size:12px; cursor:pointer;">🔄 새로고침</button>
+    </div>
+    <input type="text" id="contactsSearch" placeholder="🔍  업체명 / 이름 / 번호 검색" style="width:100%; padding:12px 16px; border:1px solid #ddd; border-radius:12px; font-size:14px; margin-bottom:16px; background:#f9f9f9; box-sizing:border-box;">
+    <div id="contactsLoading" style="text-align:center; color:#aaa; font-size:13px; padding:30px;">불러오는 중...</div>
+    <div id="contactsList" style="display:none; display:grid; grid-template-columns:1fr 1fr; gap:12px;"></div>
+    <div id="contactsEmpty" style="display:none; text-align:center; color:#aaa; font-size:13px; padding:40px;">저장된 연락처가 없습니다.</div>
+  </div>
+  <!-- 툴팁 팝업 -->
+  <div id="contactTooltip" style="display:none; position:fixed; inset:0; z-index:8888; background:rgba(0,0,0,0.5);" onclick="this.style.display='none'">
+    <div style="position:absolute; bottom:0; left:0; right:0; background:#fff; border-radius:20px 20px 0 0; padding:24px 20px 36px; max-width:600px; margin:0 auto;" onclick="event.stopPropagation()">
+      <div style="width:40px; height:4px; background:#ddd; border-radius:2px; margin:0 auto 20px;"></div>
+      <div id="tooltipCompany" style="font-size:18px; font-weight:800; color:#111; margin-bottom:4px;"></div>
+      <div id="tooltipNamePos" style="font-size:14px; color:#666; margin-bottom:20px;"></div>
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <div id="tooltipMobileRow" style="display:none; align-items:center; justify-content:space-between; background:#f9f9f9; border-radius:12px; padding:12px 16px;">
+          <div>
+            <div style="font-size:11px; color:#aaa; font-weight:700; margin-bottom:2px;">모바일</div>
+            <div id="tooltipMobile" style="font-size:16px; font-weight:700; color:#111;"></div>
+          </div>
+          <a id="tooltipMobileCall" href="#" style="padding:10px 18px; background:#111; color:#fff; border-radius:10px; font-size:13px; font-weight:700; text-decoration:none;">📞 전화</a>
+        </div>
+        <div id="tooltipPhoneRow" style="display:none; align-items:center; justify-content:space-between; background:#f9f9f9; border-radius:12px; padding:12px 16px;">
+          <div>
+            <div style="font-size:11px; color:#aaa; font-weight:700; margin-bottom:2px;">유선번호</div>
+            <div id="tooltipPhone" style="font-size:16px; font-weight:700; color:#111;"></div>
+          </div>
+          <a id="tooltipPhoneCall" href="#" style="padding:10px 18px; background:#555; color:#fff; border-radius:10px; font-size:13px; font-weight:700; text-decoration:none;">📞 전화</a>
+        </div>
+      </div>
+      <button onclick="document.getElementById('contactTooltip').style.display='none'" style="width:100%; margin-top:20px; padding:14px; background:#f0f0f0; border:none; border-radius:12px; font-size:14px; font-weight:700; cursor:pointer; color:#555;">닫기</button>
+    </div>
+  </div>
+</section>
+
+<script>
+(function() {
+    // --- DOM 요소 ---
+    const uploadInput = document.getElementById('cardUploadInput');
+    const previewWrap = document.getElementById('cardPreviewWrap');
+    const previewImg  = document.getElementById('cardPreviewImg');
+    const loadingEl   = document.getElementById('cardLoading');
+    const loadingText = document.getElementById('cardLoadingText');
+    const formWrap    = document.getElementById('cardFormWrap');
+    const rawTextEl   = document.getElementById('cardRawText');
+
+    // 입력 필드
+    const companyEl   = document.getElementById('cardCompany');
+    const nameEl      = document.getElementById('cardName');
+    const positionEl  = document.getElementById('cardPosition');
+    const mobileEl    = document.getElementById('cardMobile');
+    const phoneEl     = document.getElementById('cardPhone');
+
+    // 버튼
+    const retakeBtn   = document.getElementById('cardRetakeBtn');
+    const saveBtn     = document.getElementById('cardSaveBtn');
+
+    // 상태
+    let currentImageFile = null;
+
+    // --- 초기화 / 리셋 ---
+    function resetForm() {
+        companyEl.value = '';
+        nameEl.value = '';
+        positionEl.value = '';
+        mobileEl.value = '';
+        phoneEl.value = '';
+        if (rawTextEl) rawTextEl.textContent = '';
+    }
+
+    // --- 이미지 리사이징 (최대 1280px, 용량/성능 개선) ---
+    function resizeImageToBlob(file, maxWidth = 1280, quality = 0.85) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            const url = URL.createObjectURL(file);
+            img.onload = () => {
+                URL.revokeObjectURL(url);
+                let width = img.width;
+                let height = img.height;
+                if (width > maxWidth) {
+                    height = (height * maxWidth) / width;
+                    width = maxWidth;
+                }
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                canvas.toBlob(blob => resolve(blob), 'image/jpeg', quality);
+            };
+            img.onerror = reject;
+            img.src = url;
+        });
+    }
+
+    // --- OCR 실행 ---
+    async function runOCR(blob) {
+        loadingEl.style.display = 'block';
+        formWrap.style.display = 'none';
+        if (loadingText) loadingText.textContent = '텍스트 추출 중...';
+
+        try {
+            if (!window.Tesseract) {
+                if (loadingText) loadingText.textContent = 'OCR 엔진 로딩 중...';
+                await new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.0.4/tesseract.min.js';
+                    script.onload = resolve;
+                    script.onerror = reject;
+                    document.head.appendChild(script);
+                });
+            }
+
+            const url = URL.createObjectURL(blob);
+            const result = await Tesseract.recognize(url, 'kor+eng', {
+                logger: m => {
+                    if (m.status === 'recognizing text' && loadingText)
+                        loadingText.textContent = `추출 중... ${Math.round(m.progress * 100)}%`;
+                }
+            });
+            URL.revokeObjectURL(url);
+            const text = result.data.text;
+            if (rawTextEl) rawTextEl.textContent = text;
+            parseAndFill(text);
+        } catch (err) {
+            if (loadingText) loadingText.textContent = '추출 실패 - 직접 입력해주세요';
+            console.error(err);
+        } finally {
+            loadingEl.style.display = 'none';
+            formWrap.style.display = 'block';
+        }
+    }
+
+    // --- 텍스트 파싱 (기존 로직 유지) ---
+    function formatPhone(raw) {
+        const digits = raw.replace(/\D/g, '');
+        if (digits.length === 11) return digits.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
+        if (digits.length === 10) {
+            if (digits.startsWith('02')) return digits.replace(/(\d{2})(\d{4})(\d{4})/, '$1-$2-$3');
+            return digits.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
+        }
+        if (digits.length === 9 && digits.startsWith('02')) return digits.replace(/(\d{2})(\d{3})(\d{4})/, '$1-$2-$3');
+        return raw;
+    }
+
+    function parseAndFill(text) {
+        const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+
+        // 모바일 (010)
+        const mobileMatch = text.match(/010[-.\s]?\d{3,4}[-.\s]?\d{4}/);
+        if (mobileEl) mobileEl.value = mobileMatch ? formatPhone(mobileMatch[0]) : '';
+
+        // 유선 (010 제외)
+        const allPhones = [...text.matchAll(/\d{2,3}[-.\s]?\d{3,4}[-.\s]?\d{4}/g)];
+        const landline = allPhones.find(m => !m[0].replace(/\D/g,'').startsWith('010'));
+        if (phoneEl) phoneEl.value = landline ? formatPhone(landline[0]) : '';
+
+        // 업체명
+        const companyLine = lines.find(l => /\(주\)|㈜|Co\.|Inc\.|주식회사|건설|인테리어|마루|건재|자재|그룹|기업|산업|유한|파트너|엔터|서비스/i.test(l)) || '';
+        if (companyEl) companyEl.value = companyLine;
+
+        // 직급
+        const positionLine = lines.find(l => /대표|사장|이사|상무|전무|부장|차장|과장|대리|팀장|주임|사원|원장|소장|실장|본부장|매니저|director|manager/i.test(l)) || '';
+        if (positionEl) positionEl.value = positionLine;
+
+        // 이름 (2~4글자 한글)
+        const nameLine = lines.find(l => /^[가-힣]{2,4}$/.test(l.replace(/\s/g, '')) && l !== positionLine) || '';
+        if (nameEl) nameEl.value = nameLine;
+    }
+
+    // --- 이미지 업로드 처리 ---
+    uploadInput.addEventListener('change', async () => {
+        const file = uploadInput.files[0];
+        if (!file) return;
+
+        currentImageFile = file;
+        // 미리보기 표시
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            previewImg.src = e.target.result;
+            previewWrap.style.display = 'block';
+            formWrap.style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+
+        // 리사이징 후 OCR 실행
+        try {
+            const resizedBlob = await resizeImageToBlob(file, 1280, 0.85);
+            await runOCR(resizedBlob);
+        } catch (err) {
+            console.error('이미지 처리 실패:', err);
+            loadingEl.style.display = 'none';
+            formWrap.style.display = 'block';
+        }
+    });
+
+    // --- 다시 선택 ---
+    retakeBtn.addEventListener('click', () => {
+        resetForm();
+        previewWrap.style.display = 'none';
+        formWrap.style.display = 'none';
+        uploadInput.value = '';
+        currentImageFile = null;
+        uploadInput.click();  // 다시 파일 선택창 열기
+    });
+
+    // --- 저장 (기존 GAS 연동 유지) ---
+    saveBtn.addEventListener('click', async () => {
+        const company  = companyEl.value.trim();
+        const name     = nameEl.value.trim();
+        const position = positionEl.value.trim();
+        const mobile   = mobileEl.value.trim();
+        const phone    = phoneEl.value.trim();
+        const today    = new Date().toISOString().slice(0,10);
+
+        if (!company && !name && !mobile && !phone) {
+            showToast('저장할 정보를 입력해주세요.');
+            return;
+        }
+
+        saveBtn.disabled = true;
+        saveBtn.textContent = '저장 중...';
+
+        try {
+            const res = await fetch(GAS_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'appendRow',
+                    spreadsheetId: SHEET_CONFIG.ID,
+                    sheetName: SHEET_CONFIG.CONTACTS,
+                    row: [company, name, position, mobile, phone, today]
+                })
+            });
+            const data = await res.json();
+            if (data.status === 'ok' || data.result === 'success' || data.success) {
+                showToast('✅ 저장 완료!');
+                resetForm();
+                previewWrap.style.display = 'none';
+                formWrap.style.display = 'none';
+                uploadInput.value = '';
+                currentImageFile = null;
+            } else {
+                showToast('저장 실패: ' + JSON.stringify(data));
+            }
+        } catch(e) {
+            showToast('저장 오류: ' + e.message);
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.textContent = '💾 저장';
+        }
+    });
+
+})();
+</script>
+
+<script>
+(function() {
+localStorage.removeItem('baram_auth');
+sessionStorage.removeItem('baram_auth');
+    const PASS = '7736';
+    const SESSION_KEY = 'baram_auth';
+    
+    const lockSection = document.getElementById('lockSection');
+    const mainSection = document.getElementById('mainSection');
+    const authBtn = document.getElementById('authBtn');
+    const authPassword = document.getElementById('authPassword');
+    const authError = document.getElementById('authError');
+
+    // 잠금 중 body 스크롤 차단
+    function lockBody() {
+        document.body.style.overflow = 'hidden';
+    }
+    function unlockBody() {
+        document.body.style.overflow = '';
+    }
+    
+    function unlock() {
+    if (lockSection) lockSection.style.display = 'none';
+    if (mainSection) mainSection.style.display = 'block';
+    localStorage.setItem(SESSION_KEY, '1');
+    unlockBody();
+    window.scrollTo(0, 0);
+}
+    
+    function checkPassword() {
+        const val = authPassword.value;
+        if (val === PASS) {
+            unlock();
+        } else {
+            authError.style.display = 'block';
+            authPassword.value = '';
+            authPassword.focus();
+        }
+    }
+    
+    if (localStorage.getItem(SESSION_KEY) === '1') {
+        unlock();
+    } else {
+        lockBody();
+    }
+    
+    authBtn.addEventListener('click', checkPassword);
+    authPassword.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') checkPassword();
+    });
+    
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'F12' ||
+            (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) ||
+            (e.ctrlKey && e.key === 'U')) {
+            e.preventDefault();
+            return false;
+        }
+    });
+})();
+</script>
+
+<script>
+    (function() {
+        const memoArea = document.getElementById('workMemo');
+        if (!memoArea) return;
+
+        // 1. 최초 저장 데이터 로드
+        memoArea.value = localStorage.getItem('baram_work_memo') || '';
+
+        // 타이핑 시 글씨를 쓰고 있는 '줄'을 감지해서 항상 내 눈높이(모니터 중간)에 맞춰주는 특수 마법 함수
+        const keepEyesLevel = () => {
+            // 메모 탭이 숨겨져 있을 때는 스크롤 보정을 완전히 정지 (비밀번호 화면 등 튕김 차단)
+            const panel = document.getElementById('memoTab');
+            if (!panel || panel.style.display === 'none') return;
+
+            // 현재 사용자가 글자를 입력하고 있는 커서의 줄 위치 계산
+            const cursorPosition = memoArea.selectionStart;
+            const textUpToCursor = memoArea.value.substring(0, cursorPosition);
+            const currentLineNum = textUpToCursor.split('\n').length;
+            const totalLines = memoArea.value.split('\n').length;
+
+            // 줄바꿈이 일어났거나 긴 글 하단을 수정 중일 때
+            const lineHeight = 24; // 글자 크기 대비 1줄당 대략적인 높이(px)
+            const currentCursorTop = currentLineNum * lineHeight;
+            const memoVisibleHeight = memoArea.clientHeight;
+
+            // 커서가 입력창 내에서 현재 보여지는 스크롤 화면의 하단 구역(70% 지점)을 넘어가려고 하면
+            if (currentCursorTop > memoArea.scrollTop + (memoVisibleHeight * 0.7)) {
+                // 커서 줄이 메모창의 정중앙에 배치되도록 메모장 내부 스크롤을 실시간으로 슥 올려줍니다.
+                memoArea.scrollTop = currentCursorTop - (memoVisibleHeight / 2);
+            }
+        };
+
+        // 2. 글자 입력할 때마다 저장 및 눈높이 추적 실행
+        memoArea.addEventListener('input', () => {
+            localStorage.setItem('baram_work_memo', memoArea.value);
+            keepEyesLevel();
+        });
+
+        // 방향키 이동, 엔터, 지우기, 마우스 클릭 시에도 완벽하게 내 시선을 추적합니다.
+        memoArea.addEventListener('click', keepEyesLevel);
+        memoArea.addEventListener('keyup', (e) => {
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'Backspace'].includes(e.key)) {
+                keepEyesLevel();
+            }
+        });
+
+        // 3. 상단 탭 버튼 클릭하여 메모장 켜질 때 스크롤 초기 세팅
+
+        // 전체 삭제 기능 연동
+        const clearBtn = document.getElementById('clearMemo');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => {
+                if (confirm('메모장의 모든 내용을 정말로 삭제하시겠습니까?')) {
+                    memoArea.value = '';
+                    localStorage.removeItem('baram_work_memo');
+                }
+            });
+        }
+    })();
+    </script>
+
+
 <script>
 // products 배열은 PRICE 시트에서 동적으로 로드됩니다.
 let products = [];
@@ -1369,9 +1813,18 @@ function runCalculator() {
   const sqmPrice = getUnitValue(p, party, 'sqm', priceMode);
   const boxPrice = getUnitValue(p, party, 'box', priceMode);
 
-  // 4. 금액 계산: 모든 입력모드에서 calcBoxes * boxPrice 로 통일
-  //    → 평/m²/BOX 어떤 기준으로 입력해도 동일한 금액 보장
-  const total = calcBoxes * boxPrice;
+  // 4. 금액 계산: 입력 모드별로 입력값 기준 계산
+  let total;
+  if (inputMode === 'box') {
+    // BOX 모드: 박스 단가 × 박스수
+    total = calcBoxes * boxPrice;
+  } else if (inputMode === 'sqm') {
+    // m² 모드: m² 단가 × 입력 m² (입력값 그대로)
+    total = Math.round(inputSqm * sqmPrice);
+  } else {
+    // 평 모드: 평 단가 × 입력 평 (입력값 그대로)
+    total = Math.round(inputPy * pyPrice);
+  }
 
   const totalVat = calcVatIncluded(total);
   const priceLabel = `${party === 'consumer' ? '소비자가' : '업체가'} / ${priceMode === 'material' ? '자재 별도' : '시공비 포함'}`;
@@ -1412,7 +1865,7 @@ function initApp() {
   $('calcAreaInput').addEventListener('input',runCalculator);
   $('calcLossRateInput').addEventListener('input',runCalculator);
   $('calcResetBtn').addEventListener('click',resetCalculator);
-  document.querySelectorAll('.js-copy-template').forEach(btn=>btn.addEventListener('click',()=>copyToClipboard(templates[btn.dataset.template] || '')));
+  document.querySelectorAll('.js-copy-template').forEach(btn=>btn.addEventListener('click',()=>{ copyToClipboard(templates[btn.dataset.template] || ''); btn.blur(); }));
   document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>setTab(btn.dataset.tab)));
 }
 // PRICE 시트에서 products 로드 후 앱 초기화
@@ -1441,9 +1894,10 @@ const SHEET_CONFIG = {
     PRICE:    'PRICE',
     STOCK:    'STOCK',
     TOOLTIP:  'TOOLTIP',
-    RESERVE:  'RESERVE',   // 예약일정 시트
-    ORDER:    '발주현황',    // <품번/발주물량/단위/비고>
-    ARRIVAL:  '입고예정일',  // <품번/입고물량/단위/비고>
+    RESERVE:  'RESERVE',
+    ORDER:    '발주현황',
+    ARRIVAL:  '입고예정일',
+    CONTACTS: '연락처',
 };
 
 // 구글 시트 gviz JSON 파싱 공통 함수
@@ -1577,6 +2031,16 @@ function initExcelUpload() {
                     const pad = n => String(n).padStart(2, '0');
                     const str = `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
                     lastEl.textContent = `🕐 마지막 업로드: ${str}`;
+                    // 업로드 날짜 vs 오늘 날짜 비교
+                    const today = new Date();
+                    const isSameDay = d.getFullYear() === today.getFullYear()
+                        && d.getMonth() === today.getMonth()
+                        && d.getDate() === today.getDate();
+                    if (!isSameDay) {
+                        setTimeout(() => {
+                            alert('⚠️ 당일 재고가 아닐 수 있습니다.\n업로드 시간을 확인해 주세요.\n\n마지막 업로드: ' + str);
+                        }, 500);
+                    }
                 } else {
                     lastEl.textContent = '';
                 }
@@ -1625,7 +2089,9 @@ function initExcelUpload() {
                     const d = new Date((val - 25569) * 86400 * 1000);
                     return `${d.getUTCFullYear()}/${String(d.getUTCMonth()+1).padStart(2,'0')}/${String(d.getUTCDate()).padStart(2,'0')}`;
                 }
-                if (typeof val === 'number') return val;
+                if (typeof val === 'number') {
+                    return Math.round(val * 100) / 100;
+                }
                 return String(val).replace(/\r/g,'').trim();
             }
 
@@ -1718,11 +2184,14 @@ async function fetchStockData() {
     tbody.innerHTML = `<tr><td colspan="6" style="padding:20px;text-align:center;color:#888;">데이터를 불러오는 중...</td></tr>`;
 
     try {
-        // 재고 + 툴팁 병렬 로드
-        await Promise.all([
-            fetchSheetJson(SHEET_CONFIG.STOCK).then(rows => renderStockTable(rows)),
+        // 재고 + 발주 + 입고 + 툴팁 병렬 로드
+        const [stockRows, orderRows, arrivalRows] = await Promise.all([
+            fetchSheetJson(SHEET_CONFIG.STOCK),
+            fetchSheetJson(SHEET_CONFIG.ORDER).catch(() => []),
+            fetchSheetJson(SHEET_CONFIG.ARRIVAL).catch(() => []),
             loadTooltipMap()
         ]);
+        renderStockTable(stockRows, orderRows, arrivalRows);
     } catch (error) {
         console.error('재고 로드 실패:', error);
         tbody.innerHTML = `<tr><td colspan="6" style="padding:25px;color:#d63031;font-weight:bold;text-align:center;">
@@ -1801,8 +2270,18 @@ if (stockFiltered.length) {
                 const qty  = getCellVal(r.c[1]);
                 const unit = getCellVal(r.c[2]);
                 const note = getCellVal(r.c[3]);
+                // PY단위면 박스 환산 표시 (1PY=3.24㎡, box_m2는 products에서 조회)
+                let boxHint = '';
+                if (unit && unit.toString().toUpperCase().includes('PY')) {
+                    const pyNum = parseFloat(String(qty).replace(/[^0-9.]/g, ''));
+                    const prod = (typeof products !== 'undefined' ? products : []).find(p => p.code.toUpperCase() === code.toUpperCase());
+                    if (prod && prod.box_m2 && !isNaN(pyNum)) {
+                        const boxes = Math.ceil(pyNum * 3.24 / prod.box_m2);
+                        boxHint = ` <span style="color:#2d7ef7;font-size:12px;">(≈${boxes}BOX)</span>`;
+                    }
+                }
                 return `<div style="padding:6px 0; border-bottom:1px solid #f0f0f0;">
-                    입고물량 <strong>${qty} ${unit}</strong>${note ? ` · ${note}` : ''}
+                    입고물량 <strong>${qty} ${unit}</strong>${boxHint}${note ? ` · ${note}` : ''}
                 </div>`;
             }).join('');
         } else { arrivalEl.innerHTML = noData; }
@@ -1865,7 +2344,7 @@ function parseReserveFromSheet(rows, targetCode) {
     return results;
 }
 
-function renderStockTable(rows) {
+function renderStockTable(rows, orderRows, arrivalRows) {
     const tbody = document.getElementById('stockTableBody');
     if (!tbody) return;
     tbody.innerHTML = '';
@@ -1896,14 +2375,55 @@ function renderStockTable(rows) {
         // 보조행 스킵 (엑셀 업로드 시 이미 차수+날짜 합쳐서 올라오므로 불필요)
         if (!itemCode && !boxSpec && !curStock && !totalBox && !totalM2) return;
 
+        // LOT에 Date toString 형태 들어오면 YY/M/D 로 변환
+        function formatLotDate(val) {
+            if (!val || val === '-') return val;
+            // "Fri Jul 14 2023 00:00:00 GMT+0900" 형태 감지
+            const d = new Date(val);
+            if (!isNaN(d.getTime()) && String(val).length > 10) {
+                const yy = String(d.getFullYear()).slice(2);
+                return yy + '/' + (d.getMonth()+1) + '/' + d.getDate();
+            }
+            return val;
+        }
+        // 차수 안에 날짜 부분도 변환 (예: "51차(Fri Jul ...)" )
+        function formatLotStr(str) {
+            if (!str) return '-';
+            return str.replace(/\(([^)]+)\)/, function(m, inner) {
+                const d = new Date(inner);
+                if (!isNaN(d.getTime()) && inner.length > 10) {
+                    const yy = String(d.getFullYear()).slice(2);
+                    return '(' + yy + '/' + (d.getMonth()+1) + '/' + d.getDate() + ')';
+                }
+                return m;
+            });
+        }
         processedRows.push({
             itemCode: itemCode || currentItemCode,
-            lotInfo:  lotInfo  || '-',
+            lotInfo:  formatLotStr(lotInfo || '-'),
             boxSpec:  boxSpec  || '-',
             curStock: curStock || 0,
             totalBox: totalBox || '-',
             totalM2:  totalM2  || '-'
         });
+    });
+
+    // 재고부족 배너 업데이트
+    updateStockAlertBanner(processedRows, orderRows, arrivalRows);
+
+    // 재고부족 품번 Set (품번 셀 배너용) — 품번별 합산 기준
+    const sumMap = {};
+    processedRows.forEach(d => {
+        const num = parseFloat(String(d.totalBox).replace(/[^0-9.\-]/g, ''));
+        if (!isNaN(num)) sumMap[d.itemCode] = (sumMap[d.itemCode] || 0) + num;
+    });
+    const alertItemCodes = new Set();
+    Object.keys(sumMap).forEach(code => {
+        if (sumMap[code] < 0) {
+            const hasOrder   = (orderRows   || []).some(r => r?.c && getCellVal(r.c[0]).trim().toUpperCase() === code.trim().toUpperCase());
+            const hasArrival = (arrivalRows || []).some(r => r?.c && getCellVal(r.c[0]).trim().toUpperCase() === code.trim().toUpperCase());
+            if (!hasOrder && !hasArrival) alertItemCodes.add(code);
+        }
     });
 
     // 2단계: 화면 렌더링
@@ -1934,18 +2454,29 @@ function renderStockTable(rows) {
 
         const totalRaw = String(d.totalM2);
       
+const totalM2Num = parseFloat(String(d.totalM2).replace(/[^0-9.\-]/g, ''));
 const totalDisplay = (!d.totalM2 || d.totalM2 === '-' || d.totalM2 === '0')
     ? `<span style="color:#d63031;font-weight:bold;">-</span>`
-    : (totalRaw.includes('PY') ? totalRaw.replace(' PY', '') : `${totalRaw}`);
+    : isNaN(totalM2Num)
+        ? String(d.totalM2)
+        : totalM2Num < 0
+            ? `<span style="color:#d63031;font-weight:700;">${totalRaw.includes('PY') ? totalRaw.replace(' PY','') : totalRaw}</span>`
+            : `<span style="color:#27ae60;font-weight:700;">${totalRaw.includes('PY') ? totalRaw.replace(' PY','') : totalRaw}</span>`;
 
+const totalBoxNum = parseFloat(String(d.totalBox).replace(/[^0-9.\-]/g, ''));
 const totalBoxDisplay = (!d.totalBox || d.totalBox === '-' || d.totalBox === '0')
     ? `<span style="color:#d63031;font-weight:bold;">-</span>`
-    : d.totalBox;
+    : isNaN(totalBoxNum)
+        ? String(d.totalBox)
+        : totalBoxNum < 0
+            ? `<span style="color:#d63031;font-weight:700;">${d.totalBox}</span>`
+            : `<span style="color:#27ae60;font-weight:700;">${d.totalBox}</span>`;
 
 tr.innerHTML = `
-    <td style="text-align:center; cursor:pointer;">${
+    <td style="text-align:center; cursor:pointer; position:relative;">${
         displayItemCode
             ? `<span class="item-code-link" data-code="${d.itemCode}" style="text-decoration:underline; text-underline-offset:3px;">${displayItemCode}</span>`
+              + (alertItemCodes.has(d.itemCode) ? `<span style="display:block;margin-top:3px;font-size:10px;background:#fff3cd;border:1px solid #ffc107;border-radius:4px;padding:1px 4px;color:#856404;font-weight:700;">⚠️ 재고확인</span>` : '')
             : ''
     }</td>
     <td style="text-align:center;">${d.lotInfo}</td>
@@ -1995,9 +2526,78 @@ tr.innerHTML = `
 }
 
 
+// ── 재고부족 배너 업데이트 ──
+function updateStockAlertBanner(processedRows, orderRows, arrivalRows) {
+    const banner   = document.getElementById('stockAlertBanner');
+    const marquee  = document.getElementById('stockAlertMarquee');
+    if (!banner || !marquee) return;
+
+    // 품번별 총BOX 합산 후 음수 품번만 수집 (2번: 합산 기준)
+    const sumByCode = {};
+    processedRows.forEach(d => {
+        const num = parseFloat(String(d.totalBox).replace(/[^0-9.\-]/g, ''));
+        if (!isNaN(num)) {
+            sumByCode[d.itemCode] = (sumByCode[d.itemCode] || 0) + num;
+        }
+    });
+
+    const alertCodes = [];
+    Object.keys(sumByCode).forEach(code => {
+        if (sumByCode[code] < 0) {
+            const hasOrder   = (orderRows   || []).some(r => r?.c && getCellVal(r.c[0]).trim().toUpperCase() === code.trim().toUpperCase());
+            const hasArrival = (arrivalRows || []).some(r => r?.c && getCellVal(r.c[0]).trim().toUpperCase() === code.trim().toUpperCase());
+            if (!hasOrder && !hasArrival) alertCodes.push(code);
+        }
+    });
+
+    if (alertCodes.length === 0) {
+        banner.style.display = 'none';
+        return;
+    }
+
+    banner.style.display = 'flex';
+
+    // 전광판 텍스트: "재고확인요망" + 품번들 한 세트로 구성 (중복 없이 한 번만)
+    const segment = '⚠ 재고확인요망 ▶ ' + alertCodes.map(c => `【 ${c} 】`).join('  ') + '          ';
+    // 루프용: 세그먼트 2개 붙여서 끊김 없이 순환
+    marquee.innerHTML = segment + segment;
+
+    // 품번별 클릭 이벤트 (span으로 감싸기)
+    marquee.innerHTML = (segment + segment).replace(/【 ([^】]+) 】/g, (m, code) => {
+        return `<span style="cursor:pointer;text-decoration:underline;text-underline-offset:2px;" onclick="openItemDetail('${code.trim()}')">${m}</span>`;
+    });
+
+    // 애니메이션
+    requestAnimationFrame(() => {
+        const w = marquee.scrollWidth / 2;
+        const speed = 80; // px/s
+        const duration = Math.round(w / speed);
+        const styleId = 'marquee-style';
+        let styleEl = document.getElementById(styleId);
+        if (!styleEl) { styleEl = document.createElement('style'); styleEl.id = styleId; document.head.appendChild(styleEl); }
+        styleEl.textContent = `@keyframes marqueeScroll { 0% { transform: translateX(0); } 100% { transform: translateX(-${w}px); } }`;
+        marquee.style.animation = 'none';
+        marquee.style.left = '0';
+        marquee.style.transform = 'translateY(-50%)';
+        requestAnimationFrame(() => {
+            marquee.style.animation = `marqueeScroll ${duration}s linear infinite`;
+        });
+    });
+}
+
 // 재고 탭 클릭 시 데이터 로드 + 시계 + 업로드 초기화
 document.addEventListener('DOMContentLoaded', () => {
-    initExcelUpload();
+    // stockTab 탭 클릭 시에만 initExcelUpload 실행
+    const stockTabBtn = document.querySelector('[data-tab="stockTab"]');
+    let stockInited = false;
+    if (stockTabBtn) {
+        stockTabBtn.addEventListener('click', () => {
+            if (!stockInited) {
+                initExcelUpload();
+                stockInited = true;
+            }
+        });
+    }
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             if (btn.dataset.tab === 'stockTab') {
@@ -2041,6 +2641,7 @@ function fillInvoiceSelects() {
 function bindInvoiceFieldEvents(root=document) {
     root.querySelectorAll('input, select').forEach(el => {
         if (el.dataset.invoiceBound === '1') return;
+        if (el.classList.contains('inv-manual-price')) return; // 별도 처리
         el.dataset.invoiceBound = '1';
         el.addEventListener('input', renderInvoice);
         if (el.tagName === 'SELECT') el.addEventListener('change', renderInvoice);
@@ -2067,51 +2668,126 @@ function createInvoiceItem(index) {
     wrap.className = 'inv-extra-item-wrap';
     wrap.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-        <div class="inv-label" style="font-size:12px; color:#333; font-weight:700; margin-bottom:0;">제품 ${index}</div>
-        <button type="button" class="inv-remove-item secondary" style="min-height:28px; padding:0 10px; font-size:11px; border-radius:8px;">✕ 삭제</button>
+        <div class="inv-label inv-item-num-label" style="font-size:12px; color:#333; font-weight:700; margin-bottom:0;">제품 ${index}</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <label style="display:inline-flex; align-items:center; gap:5px; font-size:11px; color:#888; cursor:pointer; user-select:none;">
+            <input type="checkbox" class="inv-manual-toggle" style="width:14px; height:14px; margin:0; cursor:pointer;">
+            직접입력
+          </label>
+          <button type="button" class="inv-remove-item secondary" style="min-height:28px; padding:0 10px; font-size:11px; border-radius:8px;">✕ 삭제</button>
+        </div>
       </div>
       <div class="inv-item-box" data-inv-item="${index}">
-        <div class="inv-field">
-          <div class="inv-label">제품 선택</div>
-          <select id="invProduct${index}" class="inv-product-select">
-            <option value="">-- 없음 --</option>
-          </select>
-        </div>
-        <div class="inv-grid-2">
+
+        <!-- ── 기본 모드 (드롭다운) ── -->
+        <div class="inv-auto-fields">
           <div class="inv-field">
-            <div class="inv-label">단위</div>
-            <select id="invUnit${index}" class="inv-unit-select">
-              <option value="M2">M2</option>
-              <option value="PY">PY</option>
-              <option value="BOX">BOX</option>
+            <div class="inv-label">제품 선택</div>
+            <select id="invProduct${index}" class="inv-product-select">
+              <option value="">-- 없음 --</option>
             </select>
           </div>
+          <div class="inv-grid-2">
+            <div class="inv-field">
+              <div class="inv-label">단위</div>
+              <select id="invUnit${index}" class="inv-unit-select">
+                <option value="M2">M2</option>
+                <option value="PY">PY</option>
+                <option value="BOX">BOX</option>
+              </select>
+            </div>
+            <div class="inv-field">
+              <div class="inv-label">수량 입력</div>
+              <input type="number" id="invQty${index}" class="inv-qty-input" step="0.01" min="0">
+            </div>
+          </div>
+          <div class="inv-loss-row" style="display:grid; grid-template-columns:1.8fr 1fr; gap:8px; align-items:end; margin-bottom:12px;">
+            <div class="inv-field" style="margin-bottom:0;">
+              <div class="inv-label">가격 기준</div>
+              <select id="invParty${index}" class="inv-party-select">
+                <option value="consumer">소비자가</option>
+                <option value="vendor">업체가</option>
+                         <option value="vendor_included">업체가 (시공비 포함)</option>
+                         <option value="vendor_material">업체가 (자재만)</option>
+              </select>
+            </div>
+            <div class="inv-field" style="margin-bottom:0;">
+              <div class="inv-label">로스율(%)</div>
+              <input type="number" id="invLoss${index}" class="inv-loss-input" step="0.1" min="0" placeholder="0">
+            </div>
+          </div>
+        </div>
+
+        <!-- ── 직접입력 모드 (체크 시 표시) ── -->
+        <div class="inv-manual-fields" style="display:none; background:#f4f6ff; border:1px solid #d0d8ff; border-radius:10px; padding:12px; margin-bottom:12px;">
+          <div style="font-size:11px; color:#6674cc; font-weight:700; margin-bottom:10px;">✏️ 직접입력 모드 — 견적서에 그대로 반영됩니다</div>
           <div class="inv-field">
-            <div class="inv-label">수량 입력</div>
-            <input type="number" id="invQty${index}" class="inv-qty-input" step="0.01" min="0">
+            <div class="inv-label">ITEM 명</div>
+            <textarea id="invManualName${index}" class="inv-manual-name" rows="2" placeholder="" style="width:100%; resize:none; padding:6px 12px; border:1px solid #ddd; border-radius:8px; font-size:14px; line-height:1.4; font-family:inherit; height:44px !important; min-height:44px !important; overflow:hidden;"></textarea>
+          </div>
+          <div class="inv-field">
+            <div class="inv-label">SIZE</div>
+            <input type="text" id="invManualSize${index}" class="inv-manual-size" placeholder="" style="width:100%;">
+          </div>
+          <div class="inv-grid-2">
+            <div class="inv-field">
+              <div class="inv-label">단위</div>
+              <input type="text" id="invManualUnit${index}" class="inv-manual-unit" placeholder="" list="invManualUnitList${index}" style="width:100%;">
+              <datalist id="invManualUnitList${index}">
+                <option value="M2"><option value="PY"><option value="BOX"><option value="식"><option value="EA"><option value="SET">
+              </datalist>
+            </div>
+            <div class="inv-field">
+              <div class="inv-label">수량</div>
+              <input type="text" id="invManualQty${index}" class="inv-manual-qty" placeholder="" inputmode="decimal" style="width:100%;">
+            </div>
+          </div>
+          <div class="inv-field" style="margin-bottom:0;">
+            <div class="inv-label">단가 (원)</div>
+            <input type="text" id="invManualPrice${index}" class="inv-manual-price" placeholder="" inputmode="numeric" style="width:100%;">
           </div>
         </div>
-        <div class="inv-loss-row" style="display:grid; grid-template-columns:1.8fr 1fr; gap:8px; align-items:end; margin-bottom:12px;">
-          <div class="inv-field" style="margin-bottom:0;">
-            <div class="inv-label">가격 기준</div>
-            <select id="invParty${index}" class="inv-party-select">
-              <option value="consumer">소비자가</option>
-              <option value="vendor">업체가</option>
-            </select>
-          </div>
-          <div class="inv-field" style="margin-bottom:0;">
-            <div class="inv-label">로스율(%)</div>
-            <input type="number" id="invLoss${index}" class="inv-loss-input" step="0.1" min="0" placeholder="0">
-          </div>
-        </div>
+
       </div>
     `.trim();
-    // 삭제 버튼 이벤트
+
+    // 삭제 버튼
     wrap.querySelector('.inv-remove-item').addEventListener('click', () => {
         wrap.remove();
         renumberInvoiceItems();
         renderInvoice();
     });
+
+    // 직접입력 토글
+    const toggle = wrap.querySelector('.inv-manual-toggle');
+    const autoFields   = wrap.querySelector('.inv-auto-fields');
+    const manualFields = wrap.querySelector('.inv-manual-fields');
+    toggle.addEventListener('change', () => {
+        const isManual = toggle.checked;
+        autoFields.style.display   = isManual ? 'none' : '';
+        manualFields.style.display = isManual ? '' : 'none';
+        renderInvoice();
+    });
+
+    // 직접입력 필드 전체에 renderInvoice 바인딩 (textarea 포함)
+    manualFields.querySelectorAll('input, textarea').forEach(el => {
+        if (el.classList.contains('inv-manual-price')) return; // 단가는 아래서 처리
+        el.addEventListener('input', renderInvoice);
+    });
+
+    // 단가 콤마 포맷
+    const priceInput = wrap.querySelector('.inv-manual-price');
+    priceInput.addEventListener('input', function() {
+        const raw = this.value.replace(/[^0-9]/g, '');
+        if (!raw) { this.value = ''; return; }
+        const pos = this.selectionStart;
+        const prevLen = this.value.length;
+        this.value = parseInt(raw, 10).toLocaleString('ko-KR');
+        const diff = this.value.length - prevLen;
+        try { this.setSelectionRange(pos + diff, pos + diff); } catch(e) {}
+        renderInvoice();
+    });
+
     return wrap;
 }
 
@@ -2158,18 +2834,51 @@ function initInvoiceTab() {
     if (!invoiceInited) {
         invoiceInited = true;
         // 실시간 갱신: 모든 입력 변경 시
-        const ids = ['invBillTo','invWorkDate','invSite','invManager','invDate',
-                     'invMisc'];
+        const ids = ['invBillTo','invWorkDate','invSite','invManager','invDate'];
         ids.forEach(id => {
             const el = document.getElementById(id);
             if (el) el.addEventListener('input', renderInvoice);
             if (el && (el.tagName === 'SELECT')) el.addEventListener('change', renderInvoice);
         });
+
+        // 공과잡비: 숫자 입력 시 콤마+원 포맷 표시
+        const miscEl = document.getElementById('invMisc');
+        if (miscEl) {
+            miscEl.addEventListener('input', function() {
+                const raw = this.value.replace(/[^0-9]/g, '');
+                if (raw === '') {
+                    this.value = '';
+                } else {
+                    const num = parseInt(raw, 10);
+                    this.value = num.toLocaleString('ko-KR') + '원';
+                }
+                // 커서를 '원' 앞으로 고정
+                const len = this.value.length;
+                const pos = this.value.endsWith('원') ? len - 1 : len;
+                this.setSelectionRange(pos, pos);
+                renderInvoice();
+            });
+            // 포커스 시 숫자만 남기기
+            miscEl.addEventListener('focus', function() {
+                const raw = this.value.replace(/[^0-9]/g, '');
+                this.value = raw;
+            });
+            // 포커스 아웃 시 다시 포맷
+            miscEl.addEventListener('blur', function() {
+                const raw = this.value.replace(/[^0-9]/g, '');
+                if (raw === '') {
+                    this.value = '';
+                } else {
+                    this.value = parseInt(raw, 10).toLocaleString('ko-KR') + '원';
+                }
+            });
+        }
         bindInvoiceFieldEvents(document.getElementById('invoiceTab'));
 
         document.getElementById('invPreviewBtn').addEventListener('click', renderInvoice);
         document.getElementById('invPrintBtn').addEventListener('click', printInvoice);
         document.getElementById('invSaveImgBtn').addEventListener('click', saveInvoiceImage);
+        document.getElementById('invSavePdfBtn').addEventListener('click', saveInvoicePdf);
         document.getElementById('invAddItemBtn')?.addEventListener('click', addInvoiceItem);
 
         // 모바일 scale 계산 + resize 대응
@@ -2190,48 +2899,121 @@ function formatInvSize(spec='') {
         .trim();
 }
 
-function getInvItemFromBox(box) {
+function getInvItemFromBox(box, splitCosts=false) {
+
+    // ── 직접입력 모드 체크 (토글은 box 바깥 wrap에 있으므로 closest로 탐색) ──
+    const wrap = box.closest('.inv-extra-item-wrap') || box;
+    const isManual = wrap.querySelector('.inv-manual-toggle')?.checked;
+    if (isManual) {
+        const name      = wrap.querySelector('.inv-manual-name')?.value.trim()  || '';
+        const size      = wrap.querySelector('.inv-manual-size')?.value.trim()  || '';
+        const unit      = (wrap.querySelector('.inv-manual-unit')?.value || '').trim().toUpperCase();
+        const qtyRaw    = (wrap.querySelector('.inv-manual-qty')?.value || '').replace(/[^0-9.]/g, '');
+        const qty       = qtyRaw === '' ? 1 : (parseFloat(qtyRaw) || 1);
+        const unitPrice = parseInt((wrap.querySelector('.inv-manual-price')?.value || '').replace(/[^0-9]/g, ''), 10) || 0;
+        if (!name && !unitPrice) return null;
+        return {
+            name,
+            size,
+            unit,
+            qty,
+            unitPrice: unitPrice || null,
+            total: Math.round(qty * (unitPrice || 0)),
+        };
+    }
+
+    // ── 기존 자동계산 모드 ──
     const code  = box.querySelector('.inv-product-select')?.value;
     const unit  = box.querySelector('.inv-unit-select')?.value || 'M2';
     const qty   = parseFloat(box.querySelector('.inv-qty-input')?.value) || 0;
-    const party = box.querySelector('.inv-party-select')?.value || 'consumer';
+    const partyRaw = box.querySelector('.inv-party-select')?.value || 'consumer_included';
+
+let party, priceMode;
+    
+    if (partyRaw === 'consumer_included') {
+        party = 'consumer';
+        priceMode = 'included';
+    } else if (partyRaw === 'consumer_material') {
+        party = 'consumer';
+        priceMode = 'material';
+    } else if (partyRaw === 'vendor_included') {
+        party = 'vendor';
+        priceMode = 'included';
+    } else {  // vendor_material
+        party = 'vendor';
+        priceMode = 'material';
+    }
+
     const lossRate = parseFloat(box.querySelector('.inv-loss-input')?.value) || 0;
     if (!code) return null;
     const p = products.find(x => x.code === code);
     if (!p) return null;
 
-    const PY_FACTOR = 3.24; // 1평 = 3.24㎡ (계산기 탭과 동일)
+    const PY_FACTOR = 3.24;
     const lossMultiplier = lossRate > 0 ? (1 + lossRate / 100) : 1;
 
     let displayQty, unitPrice, total;
 
-    // 공통: 항상 박스 수 기준으로 계산 (계산기 탭과 동일한 공식)
-    const boxPrice = getUnitValue(p, party, 'box', 'material');
+   const boxPrice = getUnitValue(p, party, 'box', priceMode);
+    const sqmPrice = getUnitValue(p, party, 'sqm', priceMode);
+    const pyPrice  = getUnitValue(p, party, 'py',  priceMode);
 
     if (unit === 'BOX') {
-        // BOX 입력: 박스수 그대로
         const boxes = Math.ceil(qty);
         unitPrice   = boxPrice;
         displayQty  = boxes;
         total       = boxes * unitPrice;
     } else if (unit === 'M2') {
-        // M2 입력 → 박스 올림 → calcBoxes * boxPrice
         const sqmWithLoss = qty * lossMultiplier;
-        const boxes       = Math.ceil(sqmWithLoss / p.box_m2);
-        const coverageSqm = boxes * p.box_m2;
-        unitPrice         = boxPrice;
-        displayQty        = Math.round(coverageSqm * 1000) / 1000; // 소수점 3자리
-        total             = boxes * unitPrice;
+        const useBoxCalc  = !!document.getElementById('invBoxCalcCheck')?.checked;
+        if (useBoxCalc && p.box_m2) {
+            // 박스기준 헤베계산: 박스 올림 → 실헤베 소수점 둘째자리 반올림
+            const boxes   = Math.ceil(sqmWithLoss / p.box_m2);
+            const realSqm = Math.round(boxes * p.box_m2 * 100) / 100;
+            unitPrice  = sqmPrice;
+            displayQty = realSqm;
+            total      = Math.round(realSqm * unitPrice);
+        } else {
+            // 기존 방식
+            unitPrice  = sqmPrice;
+            displayQty = Math.round(sqmWithLoss * 1000) / 1000;
+            total      = Math.round(sqmWithLoss * unitPrice);
+        }
     } else {
-        // PY 입력 → 박스 올림 → calcBoxes * boxPrice
-        const sqmInput    = qty * PY_FACTOR;
-        const sqmWithLoss = sqmInput * lossMultiplier;
-        const boxes       = Math.ceil(sqmWithLoss / p.box_m2);
-        const coverageSqm = boxes * p.box_m2;
-        const coveragePy  = coverageSqm / PY_FACTOR;
-        unitPrice         = boxPrice;
-        displayQty        = Math.round(coveragePy * 1000) / 1000; // 소수점 3자리
-        total             = boxes * unitPrice;
+        const pyWithLoss = qty * lossMultiplier;
+        const useBoxCalc = !!document.getElementById('invBoxCalcCheck')?.checked;
+        if (useBoxCalc && p.box_m2) {
+            // 박스기준 PY계산: PY×3.24 → ÷box_m2 → 올림 → ×box_m2 → ÷3.24 → 소수점 둘째자리 올림
+            const sqmWithLoss = pyWithLoss * PY_FACTOR;
+            const boxes       = Math.ceil(sqmWithLoss / p.box_m2);
+            const realSqm     = boxes * p.box_m2;
+            const realPy      = Math.ceil(realSqm / PY_FACTOR * 100) / 100;
+            unitPrice  = pyPrice;
+            displayQty = realPy;
+            total      = Math.round(realPy * unitPrice);
+        } else {
+            // 기존 방식
+            unitPrice  = pyPrice;
+            displayQty = Math.round(pyWithLoss * 1000) / 1000;
+            total      = Math.round(pyWithLoss * unitPrice);
+        }
+    }
+
+    if (splitCosts && unit !== 'BOX') {
+        const discount = getBoxDiscount(p.code);
+        if (discount !== null) {
+            const splitQty = displayQty;
+            const materialPrice = unit === 'M2'
+                ? ceilTo((pyPrice - discount) / PY_FACTOR, 100)
+                : pyPrice - discount;
+            const laborPrice = unit === 'M2'
+                ? ceilTo(discount / PY_FACTOR, 100)
+                : discount;
+            return [
+                { name: `BARAM\n${p.code}`, size: formatInvSize(p.spec), unit, qty: splitQty, unitPrice: materialPrice, total: Math.round(splitQty * materialPrice) },
+                { name: '인건비, 부자재비', isLaborCost: true, size: '', unit, qty: splitQty, unitPrice: laborPrice, total: Math.round(splitQty * laborPrice) }
+            ];
+        }
     }
 
     return {
@@ -2257,10 +3039,35 @@ function renderInvoice() {
     document.getElementById('pvManager').textContent  = document.getElementById('invManager')?.value  || '—';
     document.getElementById('pvDate').textContent     = document.getElementById('invDate')?.value     || '—';
 
-    const invoiceItems = [...document.querySelectorAll('[data-inv-item]')]
-        .map(getInvItemFromBox)
+    const splitCosts = !!document.getElementById('invSplitCostCheck')?.checked;
+    const mergeLaborCosts = splitCosts && !!document.getElementById('invMergeLaborCheck')?.checked;
+    let invoiceItems = [...document.querySelectorAll('[data-inv-item]')]
+        .flatMap(box => {
+            const item = getInvItemFromBox(box, splitCosts);
+            return Array.isArray(item) ? item : [item];
+        })
         .filter(Boolean);
-    const miscRaw = parseFloat(document.getElementById('invMisc')?.value) || 0;
+    if (mergeLaborCosts) {
+        let laborTotal = 0;
+        invoiceItems = invoiceItems.filter(item => {
+            if (item.isLaborCost) {
+                laborTotal += item.total;
+                return false;
+            }
+            return true;
+        });
+        if (laborTotal > 0) {
+            invoiceItems.push({
+                name: '인건비, 부자재비',
+                size: '',
+                unit: '',
+                qty: '',
+                unitPrice: null,
+                total: laborTotal,
+            });
+        }
+    }
+    const miscRaw = parseInt((document.getElementById('invMisc')?.value || '').replace(/[^0-9]/g, ''), 10) || 0;
 
     const tbody = document.getElementById('pvTableBody');
     const totalBody = document.getElementById('pvTotalBody');
@@ -2272,14 +3079,20 @@ function renderInvoice() {
     function addItemRow(item) {
         if (!item) return;
         subTotal += item.total;
+        const qtyDisplay = item.qty === '' || item.qty === null || item.qty === undefined
+            ? ''
+            : (item.qty % 1 === 0 ? item.qty : parseFloat(item.qty.toFixed(3)));
+        const unitPriceDisplay = item.unitPrice === '' || item.unitPrice === null || item.unitPrice === undefined
+            ? ''
+            : fmtNum(item.unitPrice);
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td class="td-item" style="white-space:pre-line;">${item.name}</td>
             <td class="td-center">${item.size}</td>
             <td class="td-center">${item.unit}</td>
-            <td class="td-center">${item.qty % 1 === 0 ? item.qty : parseFloat(item.qty.toFixed(3))}</td>
+            <td class="td-center">${qtyDisplay}</td>
             <td class="td-won">₩</td>
-            <td class="td-right">${fmtNum(item.unitPrice)}</td>
+            <td class="td-right">${unitPriceDisplay}</td>
             <td class="td-won">₩</td>
             <td class="td-right">${fmtNum(item.total)}</td>
         `;
@@ -2306,7 +3119,8 @@ function renderInvoice() {
     // SUB TOTAL
     const vat = Math.round(subTotal * 0.1);
     const grandRaw = subTotal + vat;
-    const grand = Math.floor(grandRaw / 10000) * 10000; // 단수정리 (만원 단위)
+    const useAdjust = document.getElementById('invAdjustCheck')?.checked !== false;
+    const grand = useAdjust ? Math.floor(grandRaw / 10000) * 10000 : grandRaw;
     const adjust = grand - grandRaw;
 
     const makeTotal = (label, val, cls='normal') => {
@@ -2322,18 +3136,37 @@ function renderInvoice() {
 
     makeTotal('SUB TOTAL', subTotal, 'subtotal');
     makeTotal('Tax Vat 10%', vat);
-    if (adjust !== 0) makeTotal('단수정리', adjust);
+    if (useAdjust && adjust !== 0) makeTotal('단수정리', adjust);
     makeTotal('GRAND TOTAL', grand, 'grand');
 
-    // REMARKS 단위 표시 업데이트 - 모든 제품 박스의 단위 확인
-    const allUnits = [...document.querySelectorAll('[data-inv-item] .inv-unit-select')]
-        .map(s => s.value).filter(Boolean);
+    // REMARKS 단위 표시 업데이트 - 모든 제품 박스의 단위 확인 (직접입력 모드 포함)
+    const allUnits = [...document.querySelectorAll('[data-inv-item]')].map(box => {
+        const isManual = box.querySelector('.inv-manual-toggle')?.checked;
+        if (isManual) return (box.querySelector('.inv-manual-unit')?.value || '').trim().toUpperCase();
+        return box.querySelector('.inv-unit-select')?.value || '';
+    }).filter(Boolean);
     const unit1 = allUnits[0] || 'M2';
     const allBox = allUnits.length > 0 && allUnits.every(u => u === 'BOX');
 
-    // INVOICE(자재만) 표시 여부
+    // INVOICE / ESTIMATE 타이틀 + inv-brand letter-spacing 동적 조정
     const subtitleEl = document.getElementById('pvInvoiceSubtitle');
-    if (subtitleEl) subtitleEl.textContent = allBox ? '(자재만)' : '';
+    const titleEl    = document.querySelector('.inv-title');
+    const brandEl    = document.querySelector('.inv-brand');
+    if (subtitleEl) {
+        const isDraft = document.getElementById('invDraftCheck')?.checked;
+        if (isDraft) {
+            // ESTIMATE 모드
+            if (titleEl) titleEl.childNodes[0].textContent = 'ESTIMATE';
+            if (brandEl) brandEl.style.letterSpacing = '15.4px';
+            subtitleEl.textContent = '';
+        } else {
+            // INVOICE 모드 복원
+            if (titleEl) titleEl.childNodes[0].textContent = 'INVOICE';
+            if (brandEl) brandEl.style.letterSpacing = '';
+            if (allBox) subtitleEl.textContent = '(자재만)';
+            else subtitleEl.textContent = '';
+        }
+    }
 
     if (allBox) {
         // BOX 전용 REMARKS (빨간색 항목: 결제조건+운임비)
@@ -2443,9 +3276,11 @@ async function saveInvoiceImage() {
         const dateStr    = rawDate.replace(/^20(\d\d)/, '$1');
         const billTo     = (document.getElementById('invBillTo')?.value || '').trim();
         const safeBillTo = billTo.replace(/[\\:*?"<>|]/g, '').trim();
+        const isDraft    = document.getElementById('invDraftCheck')?.checked;
+        const prefix     = isDraft ? '가' : '';
         const fileName   = safeBillTo
-            ? `견적서(${dateStr})_${safeBillTo}.jpg`
-            : `견적서(${dateStr}).jpg`;
+            ? `${prefix}견적서(${dateStr})_${safeBillTo}.jpg`
+            : `${prefix}견적서(${dateStr}).jpg`;
 
         // 7. 저장 — JPG blob
         const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.95));
@@ -2481,9 +3316,569 @@ async function saveInvoiceImage() {
         showToast('저장 실패: ' + e.message);
     }
 }
-</script>
-<!-- ── PWA Service Worker 등록 ── -->
-<script>
+
+async function saveInvoicePdf() {
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    try {
+        renderInvoice();
+        await new Promise(r => setTimeout(r, 300));
+
+        const el = document.getElementById('invoiceDoc');
+        if (!el) { showToast('견적서를 먼저 생성해주세요.'); return; }
+
+        const canvas = await html2canvas(el, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: '#ffffff',
+            windowWidth: el.scrollWidth,
+            windowHeight: el.scrollHeight
+        });
+
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        const imgW = canvas.width;
+        const imgH = canvas.height;
+
+        // A4 비율 계산 (pt 단위: A4 = 595.28 x 841.89)
+        const pdfW = 595.28;
+        const pdfH = (imgH * pdfW) / imgW;
+
+        // jsPDF 동적 로드
+        if (!window.jspdf) {
+            await new Promise((res, rej) => {
+                const s = document.createElement('script');
+                s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+                s.onload = res; s.onerror = rej;
+                document.head.appendChild(s);
+            });
+        }
+
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({ orientation: pdfH > pdfW ? 'portrait' : 'landscape', unit: 'pt', format: [pdfW, pdfH] });
+        pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH);
+
+        const billTo   = document.getElementById('invBillTo')?.value.trim() || '';
+        const safeName = billTo.replace(/[\\/:*?"<>|]/g, '_');
+        const dateStr  = new Date().toISOString().slice(0,10);
+        const isDraft  = document.getElementById('invDraftCheck')?.checked;
+        const prefix   = isDraft ? '가' : '';
+        const fileName = safeName ? `${prefix}견적서(${dateStr})_${safeName}.pdf` : `${prefix}견적서(${dateStr}).pdf`;
+
+        const pdfBlob = pdf.output('blob');
+        if (!isMobile && window.showSaveFilePicker) {
+            const handle = await window.showSaveFilePicker({
+                suggestedName: fileName,
+                types: [{ description: 'PDF 파일', accept: { 'application/pdf': ['.pdf'] } }]
+            });
+            const writable = await handle.createWritable();
+            await writable.write(pdfBlob);
+            await writable.close();
+        } else {
+            const url = URL.createObjectURL(pdfBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
+        }
+        showToast('PDF 저장 완료');
+    } catch(e) {
+        if (e && e.name === 'AbortError') return;
+        showToast('PDF 저장 실패: ' + e.message);
+    }
+}
+
+// ==================== 명함스캐닝 기능 ====================
+(function() {
+    let stream = null;
+    let capturedBlob = null;
+
+    const startBtn    = document.getElementById('cardStartBtn');
+    const retakeBtn   = document.getElementById('cardRetakeBtn');
+    const saveBtn     = document.getElementById('cardSaveBtn');
+    const previewWrap = document.getElementById('cardPreviewWrap');
+    const previewImg  = document.getElementById('cardPreviewImg');
+    const loadingEl   = document.getElementById('cardLoading');
+    const loadingText = document.getElementById('cardLoadingText');
+    const formWrap    = document.getElementById('cardFormWrap');
+    const rawTextEl   = document.getElementById('cardRawText');
+    const overlay     = document.getElementById('cameraOverlay');
+    const video       = document.getElementById('cardVideo');
+    const canvas      = document.getElementById('cardCanvas');
+    const shootBtn    = document.getElementById('overlayShootBtn');
+    const cancelBtn   = document.getElementById('overlayCancelBtn');
+
+    function resetForm() {
+        ['cardCompany','cardName','cardPosition','cardMobile','cardPhone']
+            .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+        if (rawTextEl) rawTextEl.textContent = '';
+    }
+
+    function stopCamera() {
+        if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+        overlay.style.display = 'none';
+        if (window.screen.orientation && window.screen.orientation.unlock) {
+            window.screen.orientation.unlock();
+        }
+    }
+
+    // ── 명함 촬영 버튼 ──
+    startBtn.addEventListener('click', async () => {
+        resetForm();
+        previewWrap.style.display = 'none';
+        formWrap.style.display = 'none';
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({
+    video: {
+        facingMode: { exact: 'environment' },
+        width: { ideal: 1920 },
+        height: { ideal: 1080 },
+        focusMode: 'continuous'   // 오토포커스 활성화
+    }
+});
+        } catch(e) {
+            // 후면카메라 없으면 기본 카메라로 재시도
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({
+    video: {
+        facingMode: { exact: 'environment' },
+        width: { ideal: 1920 },
+        height: { ideal: 1080 },
+        focusMode: 'continuous'   // 오토포커스 활성화
+    }
+});
+            } catch(e2) {
+                showToast('카메라 접근 실패: ' + e2.message); return;
+            }
+        }
+        video.srcObject = stream;
+        overlay.style.display = 'block';
+// ========== 추가: video 요소에 초점 재조정 리스너 (오버레이 표시 후) ==========
+// video.srcObject = stream; 직후 또는 오버레이 표시 후 추가
+video.addEventListener('click', async () => {
+    if (!stream) return;
+    const track = stream.getVideoTracks()[0];
+    if (track && track.applyConstraints) {
+        try {
+            await track.applyConstraints(track.getConstraints());
+            showToast('초점 조정됨');
+        } catch (e) {
+            console.warn('초점 재조정 실패:', e);
+        }
+    }
+});
+
+
+        // 가로모드 전환 시도
+        if (window.screen.orientation && window.screen.orientation.lock) {
+            window.screen.orientation.lock('landscape').catch(() => {});
+        }
+    });
+
+    // ── 촬영 버튼 ──
+    shootBtn.addEventListener('click', () => {
+        if (!stream) return;
+        canvas.width  = video.videoWidth  || 1280;
+        canvas.height = video.videoHeight || 720;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        canvas.toBlob(blob => {
+            capturedBlob = blob;
+            previewImg.src = URL.createObjectURL(blob);
+            stopCamera();
+            previewWrap.style.display = 'block';
+            runOCR();
+        }, 'image/jpeg', 0.95);
+    });
+
+    // ── 취소 버튼 ──
+    cancelBtn.addEventListener('click', stopCamera);
+
+    // ── OCR 실행 (@jcesarmobile/capacitor-ocr) ──
+    async function runOCR() {
+        loadingEl.style.display = 'block';
+        formWrap.style.display = 'none';
+        if (loadingText) loadingText.textContent = '텍스트 추출 중...';
+        try {
+            const Ocr = window.Capacitor?.Plugins?.Ocr;
+            if (!Ocr) throw new Error('OCR 플러그인 없음');
+
+            // blob → base64 data URL 변환
+            const base64DataUrl = await new Promise((res, rej) => {
+                const reader = new FileReader();
+                reader.onload = e => res(e.target.result);
+                reader.onerror = rej;
+                reader.readAsDataURL(capturedBlob);
+            });
+
+            const result = await Ocr.process({ image: base64DataUrl });
+            const text = (result.text || '').trim();
+
+            if (!text) throw new Error('텍스트 없음');
+            rawTextEl.textContent = text;
+            parseAndFill(text);
+
+        } catch(e) {
+            // fallback: Tesseract.js
+            if (loadingText) loadingText.textContent = 'OCR 엔진 로딩 중...';
+            try {
+                if (!window.Tesseract) {
+                    await new Promise((res, rej) => {
+                        const s = document.createElement('script');
+                        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.0.4/tesseract.min.js';
+                        s.onload = res; s.onerror = rej;
+                        document.head.appendChild(s);
+                    });
+                }
+                const url = URL.createObjectURL(capturedBlob);
+                const result = await Tesseract.recognize(url, 'kor+eng', {
+                    logger: m => {
+                        if (m.status === 'recognizing text' && loadingText)
+                            loadingText.textContent = `추출 중... ${Math.round(m.progress * 100)}%`;
+                    }
+                });
+                URL.revokeObjectURL(url);
+                const text = result.data.text;
+                rawTextEl.textContent = text;
+                parseAndFill(text);
+            } catch(e2) {
+                if (loadingText) loadingText.textContent = '추출 실패 - 직접 입력해주세요';
+                await new Promise(r => setTimeout(r, 1200));
+            }
+        } finally {
+            loadingEl.style.display = 'none';
+            formWrap.style.display = 'block';
+        }
+    }
+
+    // ── 텍스트 파싱 ──
+    function parseAndFill(text) {
+        const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+
+        // 모바일 (010)
+        const mobileMatch = text.match(/010[-.\s]?\d{3,4}[-.\s]?\d{4}/);
+        document.getElementById('cardMobile').value = mobileMatch ? formatPhone(mobileMatch[0]) : '';
+
+        // 유선 (010 제외)
+        const allPhones = [...text.matchAll(/\d{2,3}[-.\s]?\d{3,4}[-.\s]?\d{4}/g)];
+        const landline = allPhones.find(m => !m[0].replace(/\D/g,'').startsWith('010'));
+        document.getElementById('cardPhone').value = landline ? formatPhone(landline[0]) : '';
+
+        // 업체명
+        const companyLine = lines.find(l =>
+            /\(주\)|㈜|Co\.|Inc\.|주식회사|건설|인테리어|마루|건재|자재|그룹|기업|산업|유한|파트너|엔터|서비스/i.test(l)) || '';
+        document.getElementById('cardCompany').value = companyLine;
+
+        // 직급
+        const positionLine = lines.find(l =>
+            /대표|사장|이사|상무|전무|부장|차장|과장|대리|팀장|주임|사원|원장|소장|실장|본부장|매니저|director|manager/i.test(l)) || '';
+        document.getElementById('cardPosition').value = positionLine;
+
+        // 이름 (2~4글자 한글)
+        const nameLine = lines.find(l =>
+            /^[가-힣]{2,4}$/.test(l.replace(/\s/g, '')) && l !== positionLine) || '';
+        document.getElementById('cardName').value = nameLine;
+    }
+
+    function formatPhone(raw) {
+        const d = raw.replace(/\D/g, '');
+        if (d.length === 11) return d.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
+        if (d.length === 10) {
+            if (d.startsWith('02')) return d.replace(/(\d{2})(\d{4})(\d{4})/, '$1-$2-$3');
+            return d.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
+        }
+        if (d.length === 9 && d.startsWith('02')) return d.replace(/(\d{2})(\d{3})(\d{4})/, '$1-$2-$3');
+        return raw;
+    }
+
+    // ── 다시찍기 ──
+    retakeBtn.addEventListener('click', () => {
+        previewWrap.style.display = 'none';
+        formWrap.style.display = 'none';
+        capturedBlob = null;
+        resetForm();
+        startBtn.click();
+    });
+
+    // ── 저장 ──
+    saveBtn.addEventListener('click', async () => {
+        const company  = document.getElementById('cardCompany').value.trim();
+        const name     = document.getElementById('cardName').value.trim();
+        const position = document.getElementById('cardPosition').value.trim();
+        const mobile   = document.getElementById('cardMobile').value.trim();
+        const phone    = document.getElementById('cardPhone').value.trim();
+        const today    = new Date().toISOString().slice(0, 10);
+
+        if (!company && !name && !mobile && !phone) {
+            showToast('저장할 정보를 입력해주세요.'); return;
+        }
+        saveBtn.disabled = true;
+        saveBtn.textContent = '저장 중...';
+        try {
+            const res = await fetch(GAS_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'appendRow',
+                    spreadsheetId: SHEET_CONFIG.ID,
+                    sheetName: SHEET_CONFIG.CONTACTS,
+                    row: [company, name, position, mobile, phone, today]
+                })
+            });
+            const data = await res.json();
+            if (data.status === 'ok' || data.result === 'success' || data.success) {
+                showToast('✅ 저장 완료!');
+                previewWrap.style.display = 'none';
+                formWrap.style.display = 'none';
+                capturedBlob = null;
+                resetForm();
+            } else {
+                showToast('저장 실패: ' + JSON.stringify(data));
+            }
+        } catch(e) {
+            showToast('저장 오류: ' + e.message);
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.textContent = '💾 저장';
+        }
+    });
+
+    // 탭 이동 시 카메라 정지
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (btn.dataset.tab !== 'cardScanTab') stopCamera();
+        });
+    });
+})();
+
+// ==================== 연락처 기능 ====================
+(function() {
+    let allContacts = [];
+
+    async function loadContacts() {
+        const loadingEl = document.getElementById('contactsLoading');
+        const listEl    = document.getElementById('contactsList');
+        const emptyEl   = document.getElementById('contactsEmpty');
+        loadingEl.style.display = 'block';
+        loadingEl.textContent = '불러오는 중...';
+        listEl.style.display = 'none';
+        emptyEl.style.display = 'none';
+        try {
+            const rows = await fetchSheetJson(SHEET_CONFIG.CONTACTS);
+            allContacts = rows.map(r => ({
+                company:  r['업체명']   || '',
+                name:     r['이름']     || '',
+                position: r['직급']     || '',
+                mobile:   r['모바일']   || '',
+                phone:    r['유선번호'] || '',
+                date:     r['등록일']   || '',
+            })).filter(r => r.company || r.name || r.mobile || r.phone);
+            renderContacts(allContacts);
+        } catch(e) {
+            loadingEl.textContent = '불러오기 실패: ' + e.message;
+        }
+    }
+
+    function renderContacts(list) {
+        const loadingEl = document.getElementById('contactsLoading');
+        const listEl    = document.getElementById('contactsList');
+        const emptyEl   = document.getElementById('contactsEmpty');
+        loadingEl.style.display = 'none';
+        if (!list.length) {
+            emptyEl.style.display = 'block';
+            listEl.style.display = 'none';
+            return;
+        }
+        listEl.style.display = 'grid';
+        listEl.innerHTML = list.map((c, i) => `
+            <div onclick="showContactTooltip(${i})" style="background:#fff; border:1px solid #eee; border-radius:16px; padding:16px; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+                <div style="width:42px; height:42px; background:#111; border-radius:50%; display:flex; align-items:center; justify-content:center; margin-bottom:10px; font-size:18px;">🏢</div>
+                <div style="font-size:13px; font-weight:800; color:#111; margin-bottom:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${c.company || '-'}</div>
+                <div style="font-size:12px; color:#555; margin-bottom:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${c.name || ''}${c.position ? ' · ' + c.position : ''}</div>
+                <div style="font-size:12px; color:#3355cc; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${c.mobile || c.phone || '-'}</div>
+            </div>
+        `).join('');
+    }
+
+    window.showContactTooltip = function(idx) {
+        const c = allContacts[idx];
+        if (!c) return;
+        document.getElementById('tooltipCompany').textContent = c.company || '-';
+        document.getElementById('tooltipNamePos').textContent =
+            [c.name, c.position].filter(Boolean).join(' · ') || '-';
+
+        const mobileRow = document.getElementById('tooltipMobileRow');
+        const phoneRow  = document.getElementById('tooltipPhoneRow');
+
+        if (c.mobile) {
+            document.getElementById('tooltipMobile').textContent = c.mobile;
+            document.getElementById('tooltipMobileCall').href = 'tel:' + c.mobile;
+            mobileRow.style.display = 'flex';
+        } else { mobileRow.style.display = 'none'; }
+
+        if (c.phone) {
+            document.getElementById('tooltipPhone').textContent = c.phone;
+            document.getElementById('tooltipPhoneCall').href = 'tel:' + c.phone;
+            phoneRow.style.display = 'flex';
+        } else { phoneRow.style.display = 'none'; }
+
+        document.getElementById('contactTooltip').style.display = 'block';
+    };
+
+    document.getElementById('contactsSearch').addEventListener('input', function() {
+        const q = this.value.trim().toLowerCase();
+        if (!q) { renderContacts(allContacts); return; }
+        renderContacts(allContacts.filter(c =>
+            c.company.toLowerCase().includes(q) ||
+            c.name.toLowerCase().includes(q) ||
+            (c.mobile && c.mobile.includes(q)) ||
+            (c.phone  && c.phone.includes(q))
+        ));
+    });
+
+    document.getElementById('contactsRefreshBtn').addEventListener('click', loadContacts);
+    document.querySelector('[data-tab="contactsTab"]').addEventListener('click', () => {
+        if (!allContacts.length) loadContacts();
+    });
+})();
+
+// ==================== 평면도 면적분석 기능 ====================
+(function() {
+    const fileInput  = document.getElementById('fpFileInput');
+    const analyzeBtn = document.getElementById('fpAnalyzeBtn');
+    const previewWrap= document.getElementById('fpPreviewWrap');
+    const previewImg = document.getElementById('fpPreviewImg');
+    const fileNameEl = document.getElementById('fpFileName');
+    const resultWrap = document.getElementById('fpResultWrap');
+    const resultText = document.getElementById('fpResultText');
+    const loadingEl  = document.getElementById('fpLoading');
+    const apiKeyInput= document.getElementById('fpApiKey');
+    const apiKeySave = document.getElementById('fpApiKeySave');
+    const apiKeyStatus= document.getElementById('fpApiKeyStatus');
+
+    let currentFileData = null;
+
+    // API 키 로컬 저장/불러오기
+    const savedKey = localStorage.getItem('baram_gemini_key');
+    if (savedKey) {
+        apiKeyInput.value = savedKey;
+        apiKeyStatus.textContent = '✅ 저장된 키가 있습니다.';
+        apiKeyStatus.style.color = '#4caf50';
+    }
+    apiKeySave.addEventListener('click', () => {
+        const key = apiKeyInput.value.trim();
+        if (!key) { apiKeyStatus.textContent = '키를 입력해주세요.'; apiKeyStatus.style.color = '#f44336'; return; }
+        localStorage.setItem('baram_gemini_key', key);
+        apiKeyStatus.textContent = '✅ 저장 완료!';
+        apiKeyStatus.style.color = '#4caf50';
+    });
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.borderColor = '#6674cc'; });
+    dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor = '#ccc'; });
+    dropZone.addEventListener('drop', e => {
+        e.preventDefault();
+        dropZone.style.borderColor = '#ccc';
+        const file = e.dataTransfer.files[0];
+        if (file) handleFile(file);
+    });
+    fileInput.addEventListener('change', () => {
+        if (fileInput.files[0]) handleFile(fileInput.files[0]);
+    });
+
+    function handleFile(file) {
+        const allowed = ['image/jpeg','image/png','image/gif','image/webp','application/pdf'];
+        if (!allowed.includes(file.type)) { alert('JPG, PNG, PDF 파일만 지원합니다.'); return; }
+        fileNameEl.textContent = file.name;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const dataUrl = e.target.result;
+            currentFileData = { base64: dataUrl.split(',')[1], mediaType: file.type };
+            previewImg.src = file.type === 'application/pdf'
+                ? 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="%23f44336"/><text x="50" y="58" text-anchor="middle" fill="white" font-size="24" font-family="Arial" font-weight="bold">PDF</text></svg>'
+                : dataUrl;
+            previewWrap.style.display = 'block';
+            resultWrap.style.display = 'none';
+            analyzeBtn.style.opacity = '1';
+            analyzeBtn.style.pointerEvents = 'auto';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    analyzeBtn.addEventListener('click', async () => {
+        if (!currentFileData) return;
+        const apiKey = apiKeyInput.value.trim() || localStorage.getItem('baram_gemini_key') || '';
+        if (!apiKey) {
+            alert('API 키를 먼저 입력하고 저장해주세요.');
+            return;
+        }
+        const area    = document.getElementById('fpAreaInput').value.trim();
+        const exclude = document.getElementById('fpExcludeInput').value.trim() || '현관, 욕실, 실외기실';
+
+        analyzeBtn.disabled = true;
+        loadingEl.style.display = 'block';
+        resultWrap.style.display = 'none';
+
+        const prompt = `이 평면도를 분석해서 원목마루 시공 면적을 계산해줘.
+제외 공간: ${exclude}
+${area ? `전용면적: ${area}m²` : ''}
+
+다음 형식으로 답변해줘:
+
+【 평형 정보 】
+타입: (예: 84A, 114 등)
+전용면적: OOm²
+
+【 공간별 면적 추정 】
+거실/주방: 약 OOm²
+침실1: 약 OOm²
+침실2: 약 OOm²
+침실3: 약 OOm² (있는 경우)
+드레스룸: 약 OOm² (있는 경우)
+
+【 제외 공간 】
+${exclude}: 약 OOm²
+벽체 감안 손실: 약 OOm²
+
+【 최종 시공 정물량 】
+▶ 원목마루 시공면적: 약 OOm² (로스율 제외)
+
+【 참고사항 】
+(특이사항 간단히)
+
+도면 치수 기반으로 계산하고, 불확실한 부분은 업계 평균값으로 추정해줘.`;
+
+        try {
+            const res = await fetch(
+                `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [
+                                { inline_data: { mime_type: currentFileData.mediaType, data: currentFileData.base64 } },
+                                { text: prompt }
+                            ]
+                        }]
+                    })
+                }
+            );
+            const data = await res.json();
+            if (data.error) throw new Error(data.error.message);
+            const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '분석 결과를 가져오지 못했습니다.';
+            resultText.textContent = text;
+            resultWrap.style.display = 'block';
+        } catch(err) {
+            resultText.textContent = '오류: ' + err.message;
+            resultWrap.style.display = 'block';
+        } finally {
+            loadingEl.style.display = 'none';
+            analyzeBtn.disabled = false;
+        }
+    });
+})();
+
+// ==================== 명함스캐닝 기능 ====================
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./service-worker.js')
@@ -2516,5 +3911,6 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
+
 </body>
 </html>
