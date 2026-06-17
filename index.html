@@ -710,7 +710,7 @@
 /* 출력결과값: KoPubWorld돋움체 Light 7pt */
 .inv-meta-val { font-family:'KoPubWorldDotum','KoPubWorld Dotum','맑은 고딕','Malgun Gothic',sans-serif; font-size:9.3px; font-weight:300; color:#172033; line-height:1.35; }
 .inv-table { width:100%; border-collapse:collapse; table-layout:fixed; margin-top:0; color:#172033; }
-/* ITEM DESCRIPTION, SIZE, UNIT, Q'TY, PRICE, TOTAL: Century Gothic 8pt Bold */
+/* ITEM, SIZE, UNIT, Q'TY, PRICE, TOTAL: Century Gothic 8pt Bold */
 .inv-table thead th { height:38px; padding:0 8px; background:#efefef; border:0; font-family:'CenturyGothic','Century Gothic','AppleGothic','맑은 고딕',sans-serif; font-size:10.7px; font-weight:700; color:#020617; vertical-align:middle; }
 /* 출력결과: KoPubWorld돋움체 Light 8pt */
 .inv-table td { border:0; padding:8px 8px; font-family:'KoPubWorldDotum','KoPubWorld Dotum','맑은 고딕','Malgun Gothic',sans-serif; font-size:10.7px; font-weight:300; line-height:1.45; vertical-align:top; }
@@ -889,8 +889,16 @@
         재료비 / 인건비+부자재비 분리
       </label>
       <label class="check-chip">
+        <input type="checkbox" id="invRemarksEditCheck" />
+        REMARKS 직접입력
+      </label>
+      <label class="check-chip">
         <input type="checkbox" id="invMergeLaborCheck" />
         인건비+부자재비 합산 표시
+      </label>
+      <label class="check-chip">
+        <input type="checkbox" id="invBoxCalcCheck" />
+        박스기준 헤베계산
       </label>
       <label class="check-chip">
         <input type="checkbox" id="invDraftCheck" />
@@ -901,17 +909,10 @@
         단수정리
       </label>
       <label class="check-chip">
-        <input type="checkbox" id="invBoxCalcCheck" />
-        박스기준 헤베계산
-      </label>
-      <label class="check-chip">
         <input type="checkbox" id="invAsCheck" />
         AS견적서
       </label>
-      <label class="check-chip">
-        <input type="checkbox" id="invRemarksEditCheck" />
-        REMARKS 직접입력
-      </label>
+
     </div>
 
     <div id="invAllItems"></div>
@@ -956,7 +957,7 @@
         <table class="inv-table" id="pvTable">
           <thead>
             <tr>
-              <th style="width:28%;">ITEM DESCRIPTION</th>
+              <th style="width:28%;">ITEM</th>
               <th style="width:20%; text-align:left; padding-left:8px;">SIZE</th>
               <th style="width:8%;">UNIT</th>
               <th style="width:12%;">Q'TY</th>
