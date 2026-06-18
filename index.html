@@ -2,9 +2,34 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=yes">
 <title>바람 단가 안내 시스템</title>
+
+<!-- ── PWA 설정 ── -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#111111">
+<meta name="mobile-web-app-capable" content="yes">
+
+<!-- iOS PWA 설정 -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="바람ERP">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152.png">
+<link rel="apple-touch-icon" sizes="144x144" href="icons/icon-144.png">
+<link rel="apple-touch-icon" sizes="128x128" href="icons/icon-128.png">
+
+<!-- 스플래시 스크린 (iOS) -->
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<!-- ── /PWA 설정 ── -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@latest/dist/web/static/pretendard.css" />
+<!-- KoPubWorld 돋움체 & Century Gothic 대체 -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  @font-face { font-family:'KoPubWorldDotum'; src:local('KoPubWorld Dotum'), local('KoPubWorldDotum'); }
+  @font-face { font-family:'CenturyGothic'; src:local('Century Gothic'), local('CenturyGothic'); }
+</style>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
@@ -90,6 +115,20 @@
 #stockTable { width: 100%; border-collapse: collapse; font-size: 14px; }
 #stockTable th { background-color: #f8f9fa; color: #555; padding: 12px 8px; border-bottom: 2px solid #ddd; text-align: center; vertical-align: middle; position: sticky; top: 0; z-index: 10; }
 #stockTable td { padding: 11px 8px; border-bottom: 1px solid #eee; text-align: center; }
+
+/* 품번 열 좌측 고정 (모바일 가로스크롤 시 품번 고정) */
+#stockTable th:first-child,
+#stockTable td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 5;
+  background-color: #f8f9fa;
+  border-right: 2px solid #ccc;
+  min-width: 70px;
+}
+#stockTable thead th:first-child { z-index: 15; }
+#stockTable tr.bg-group-gray td:first-child { background-color: #f7f8fa; }
+#stockTable tr.bg-group-white td:first-child { background-color: #ffffff; }
 
 /* 품번 그룹 교차 배경 */
 #stockTable tr.bg-group-gray { background-color: #f7f8fa; }
@@ -297,13 +336,9 @@
     function resetScale() {
     const meta = document.querySelector('meta[name="viewport"]');
     if (!meta) return;
-    
-    // 1. 화면을 아주 작게 줄여서 브라우저가 줌 배율을 재계산하게 함
-    meta.content = 'width=device-width, initial-scale=0.1, maximum-scale=1.0, user-scalable=no';
-    
-    // 2. 아주 짧은 지연 후 정상 배율로 복귀
+    meta.content = 'width=device-width, initial-scale=0.1, maximum-scale=3.0, user-scalable=yes';
     setTimeout(() => {
-        meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+        meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=yes';
     }, 50);
 }
 
@@ -670,9 +705,9 @@ function unlock() {
                         <th>품번</th>
                         <th>LOT 및 입고일</th>
                         <th>BOX</th>
-                        <th>현재고(㎡)</th>
+                        <th>현재고(PY)</th>
                         <th>총 BOX</th>
-                        <th>총 재고(㎡)</th>
+                        <th>총 재고(PY)</th>
                     </tr>
                 </thead>
                 <tbody id="stockTableBody">
@@ -689,6 +724,38 @@ function unlock() {
 
 <!-- 호버 툴팁 엘리먼트 (탭 밖, body 하단에 두는 것이 좋음) -->
 <div id="stockTooltip" class="stock-tooltip"></div>
+
+<!-- 품번 상세 모달 -->
+<div id="itemDetailModal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,.45); align-items:center; justify-content:center;">
+  <div style="background:#fff; border-radius:16px; width:min(540px,95vw); max-height:85vh; overflow-y:auto; padding:28px 24px; position:relative; box-shadow:0 8px 40px rgba(0,0,0,.18);">
+    <button id="itemDetailClose" style="position:absolute;top:16px;right:16px;background:none;border:none;font-size:22px;cursor:pointer;color:#888;">✕</button>
+    <h2 id="itemDetailTitle" style="margin:0 0 20px; font-size:18px; font-weight:800; color:#1a1a2e;"></h2>
+
+    <!-- 잔여 BOX -->
+    <div style="margin-bottom:20px;">
+      <div style="font-size:13px; font-weight:700; color:#555; margin-bottom:8px; padding-bottom:6px; border-bottom:2px solid #eee;">📊 잔여 BOX</div>
+      <div id="itemDetailStock" style="font-size:15px; font-weight:800; color:#e84393;"></div>
+    </div>
+
+    <!-- 발주현황 -->
+    <div style="margin-bottom:20px;">
+      <div style="font-size:13px; font-weight:700; color:#555; margin-bottom:8px; padding-bottom:6px; border-bottom:2px solid #eee;">📦 발주현황</div>
+      <div id="itemDetailOrder" style="font-size:13px; color:#333; line-height:1.7;"></div>
+    </div>
+
+    <!-- 입고예정일 -->
+    <div style="margin-bottom:20px;">
+      <div style="font-size:13px; font-weight:700; color:#555; margin-bottom:8px; padding-bottom:6px; border-bottom:2px solid #eee;">📅 입고예정일</div>
+      <div id="itemDetailArrival" style="font-size:13px; color:#333; line-height:1.7;"></div>
+    </div>
+
+    <!-- 예약일정 -->
+    <div>
+      <div style="font-size:13px; font-weight:700; color:#555; margin-bottom:8px; padding-bottom:6px; border-bottom:2px solid #eee;">🗓 예약일정</div>
+      <div id="itemDetailReserve" style="font-size:13px; color:#333; line-height:1.7;"></div>
+    </div>
+  </div>
+</div>
 
 <!-- ===================== 견적서 탭 ===================== -->
 <section id="invoiceTab" class="tab-panel" style="display:none;">
@@ -718,22 +785,28 @@ function unlock() {
 /* A4 견적서 본체 */
 #invoiceDoc {
   width:930px; min-height:1312px; margin:0 auto; background:#fff;
-  padding:84px 82px 82px; font-family:'Pretendard','Arial',sans-serif;
+  padding:84px 82px 82px; font-family:'KoPubWorldDotum','KoPubWorld Dotum','맑은 고딕','Malgun Gothic','Pretendard','Arial',sans-serif;
   font-size:11px; color:#0f172a; border:1px solid #111; border-radius:0;
   box-shadow:0 8px 24px rgba(0,0,0,.08); position:relative;
 }
-.inv-brand { margin-left:14px; font-family:'Times New Roman',serif; font-size:13px; letter-spacing:10px; color:#111; line-height:1; }
-.inv-title { margin:8px 0 94px 7px; font-family:'Arial Black','Arial',sans-serif; font-size:56px; font-weight:900; letter-spacing:-1px; line-height:.86; color:#242424; }
-.inv-meta-grid { display:grid; grid-template-columns:1fr 170px; gap:34px; align-items:end; margin-bottom:38px; padding-bottom:5px; border-bottom:1px dotted #9a9a9a; }
-.inv-meta-grid .right-block { align-self:end; justify-self:end; width:120px; }
+.inv-brand { display:block; margin-left:7px; font-family:'Times New Roman',serif; font-size:13px; color:#111; line-height:1; letter-spacing:8px; white-space:nowrap; }
+/* INVOICE 타이틀: G마켓 산스 Bold 31.5pt → px환산 ~42px, 실제 크기는 56px 유지하되 font-family만 교체 */
+.inv-title { margin:8px 0 94px 7px; font-family:'GmarketSans','G마켓 산스','Gmarket Sans','NanumGothicExtraBold','맑은 고딕',sans-serif; font-size:56px; font-weight:900; letter-spacing:-1px; line-height:.86; color:#242424; }
+.inv-meta-grid { display:grid; grid-template-columns:1fr auto; gap:20px; align-items:end; margin-bottom:38px; padding-bottom:5px; border-bottom:1px solid #9a9a9a; }
+.inv-meta-grid .right-block { align-self:end; justify-self:end; width:auto; min-width:0; }
 .inv-meta-row { display:grid; grid-template-columns:62px 1fr; min-height:22px; align-items:center; }
-.right-block .inv-meta-row { grid-template-columns:44px 1fr; }
-.inv-meta-key { font-size:11px; font-weight:800; color:#020617; white-space:nowrap; }
+.right-block .inv-meta-row { grid-template-columns:44px auto; gap:6px; }
+.right-block .inv-meta-val { white-space:nowrap; }
+/* BILL TO, 시공예정일, 현장, 담당자, DATE 키: KoPubWorld돋움체 Bold 7pt */
+.inv-meta-key { font-family:'KoPubWorldDotum','KoPubWorld Dotum','맑은 고딕','Malgun Gothic',sans-serif; font-size:9.3px; font-weight:700; color:#020617; white-space:nowrap; }
 .inv-meta-grid > div:first-child .inv-meta-key { width:62px; }
-.inv-meta-val { font-size:11px; color:#172033; line-height:1.35; }
+/* 출력결과값: KoPubWorld돋움체 Light 7pt */
+.inv-meta-val { font-family:'KoPubWorldDotum','KoPubWorld Dotum','맑은 고딕','Malgun Gothic',sans-serif; font-size:9.3px; font-weight:300; color:#172033; line-height:1.35; }
 .inv-table { width:100%; border-collapse:collapse; table-layout:fixed; margin-top:0; color:#172033; }
-.inv-table thead th { height:38px; padding:0 8px; background:#efefef; border:0; font-size:11px; font-weight:800; color:#020617; vertical-align:middle; }
-.inv-table td { border:0; padding:8px 8px; font-size:12px; line-height:1.45; vertical-align:top; }
+/* ITEM DESCRIPTION, SIZE, UNIT, Q'TY, PRICE, TOTAL: Century Gothic 8pt Bold */
+.inv-table thead th { height:38px; padding:0 8px; background:#efefef; border:0; font-family:'CenturyGothic','Century Gothic','AppleGothic','맑은 고딕',sans-serif; font-size:10.7px; font-weight:700; color:#020617; vertical-align:middle; }
+/* 출력결과: KoPubWorld돋움체 Light 8pt */
+.inv-table td { border:0; padding:8px 8px; font-family:'KoPubWorldDotum','KoPubWorld Dotum','맑은 고딕','Malgun Gothic',sans-serif; font-size:10.7px; font-weight:300; line-height:1.45; vertical-align:top; }
 .inv-table td.td-item { text-align:left; padding-left:2px; }
 .inv-table td.td-center { text-align:center; }
 .inv-table td.td-right { text-align:right; }
@@ -748,36 +821,127 @@ function unlock() {
 .inv-table th:nth-child(7), .inv-table td:nth-child(7) { width:4% !important; }
 .inv-table th:nth-child(8), .inv-table td:nth-child(8) { width:11% !important; }
 .td-won { width:18px; text-align:center !important; color:#020617; }
-.inv-total-table { width:100%; table-layout:fixed; border-collapse:collapse; margin-top:54px; padding-top:0; border-top:1px dotted #9a9a9a; border-bottom:0; }
-.inv-total-table td { height:24px; padding:3px 8px; font-size:12px; border:0; color:#172033; }
-.inv-total-table .total-label { font-weight:800; color:#020617; padding-left:2px; }
-.inv-total-table .normal .total-label { font-weight:400; color:#172033; }
+.inv-total-table { width:100%; table-layout:fixed; border-collapse:collapse; margin-top:54px; padding-top:0; border-top:1px solid #9a9a9a; border-bottom:0; }
+.inv-total-table td { height:24px; padding:3px 8px; border:0; color:#172033; }
+/* SUB TOTAL, GRAND TOTAL 라벨: Century Gothic 8pt Bold */
+.inv-total-table .total-label { font-family:'CenturyGothic','Century Gothic','AppleGothic','맑은 고딕',sans-serif; font-size:10.7px; font-weight:700; color:#020617; padding-left:2px; }
+/* 일반 라벨 (Tax Vat, 단수정리): KoPubWorld돋움체 Light */
+.inv-total-table .normal .total-label { font-family:'KoPubWorldDotum','KoPubWorld Dotum','맑은 고딕','Malgun Gothic',sans-serif; font-size:10.7px; font-weight:300; color:#172033; }
+/* 출력결과값 (SUB/Tax/단수/GRAND 금액): KoPubWorld돋움체 Light */
+.inv-total-table .amount { font-family:'KoPubWorldDotum','KoPubWorld Dotum','맑은 고딕','Malgun Gothic',sans-serif; font-size:10.7px; font-weight:300; text-align:right; white-space:nowrap; }
+/* GRAND TOTAL 금액값: KoPubWorld돋움체 Bold */
+.inv-total-table .grand .amount { font-weight:700; }
 .inv-total-table .grand td { height:31px; font-weight:900; color:#020617; }
-.inv-total-table .grand td { border-top:1px dotted #9a9a9a; }
-.inv-total-table .amount { text-align:right; white-space:nowrap; }
-.inv-total-table .negative-won { white-space:nowrap; letter-spacing:-.5px; }
+.inv-total-table .grand td { border-top:1px solid #9a9a9a; }
+/* 단수정리 -₩ 우측 정렬 */
+.inv-total-table .negative-won { white-space:nowrap; letter-spacing:-.5px; text-align:right !important; }
+.inv-total-table td.td-won { text-align:right !important; }
 .inv-lower { display:grid; grid-template-columns:1fr 235px; gap:34px; margin-top:64px; }
-.inv-remarks { font-size:11px; color:#172033; line-height:1.55; border:0; padding:0; margin:0; }
-.inv-remarks-title, .inv-contact-title, .inv-account-title { font-size:11px; font-weight:900; color:#020617; margin-bottom:5px; }
+/* REMARKS 내용: KoPubWorld돋움체 Light 7pt */
+.inv-remarks { font-family:'KoPubWorldDotum','KoPubWorld Dotum','맑은 고딕','Malgun Gothic',sans-serif; font-size:9.3px; font-weight:300; color:#172033; line-height:1.55; border:0; padding:0; margin:0; }
+/* REMARKS 타이틀: Century Gothic 7pt Bold */
+.inv-remarks-title { font-family:'CenturyGothic','Century Gothic','AppleGothic','맑은 고딕',sans-serif; font-size:9.3px; font-weight:700; color:#020617; margin-bottom:5px; }
+/* CONTACT 타이틀: Century Gothic 7pt Bold */
+.inv-contact-title { font-family:'CenturyGothic','Century Gothic','AppleGothic','맑은 고딕',sans-serif; font-size:9.3px; font-weight:700; color:#020617; margin-bottom:5px; }
+/* ACCOUNT INFO 타이틀: Century Gothic 7pt Bold */
+.inv-account-title { font-family:'CenturyGothic','Century Gothic','AppleGothic','맑은 고딕',sans-serif; font-size:9.3px; font-weight:700; color:#020617; margin-bottom:8px; }
 .inv-red { color:#ff0000; }
-.inv-contact { margin-top:80px; font-size:11px; color:#172033; line-height:1.55; }
-.inv-account-wrap { align-self:end; margin-top:140px; text-align:right; font-size:11px; color:#172033; line-height:1.6; }
-.inv-account-title { margin-bottom:8px; }
+/* CONTACT 내용: KoPubWorld돋움체 Light 7pt */
+.inv-contact { margin-top:80px; font-family:'KoPubWorldDotum','KoPubWorld Dotum','맑은 고딕','Malgun Gothic',sans-serif; font-size:9.3px; font-weight:300; color:#172033; line-height:1.55; }
+/* ACCOUNT INFO 내용: KoPubWorld돋움체 Light 7pt */
+.inv-account-wrap { align-self:end; margin-top:140px; text-align:right; font-family:'KoPubWorldDotum','KoPubWorld Dotum','맑은 고딕','Malgun Gothic',sans-serif; font-size:9.3px; font-weight:300; color:#172033; line-height:1.6; }
 .inv-sign-line { width:138px; margin:43px 0 5px auto; border-top:1px solid #111; }
-.inv-company { font-size:11px; font-weight:700; color:#172033; }
+/* ㈜지복득마루: KoPubWorld돋움체 Light 7pt */
+.inv-company { font-family:'KoPubWorldDotum','KoPubWorld Dotum','맑은 고딕','Malgun Gothic',sans-serif; font-size:9.3px; font-weight:300; color:#172033; }
 .inv-hidden { display:none !important; }
 .inv-add-item { width:100%; margin:-2px 0 12px; min-height:38px; border-style:dashed; }
 
 @media screen and (max-width:768px) {
-  .inv-wrap { grid-template-columns:1fr !important; }
-  #invoiceDoc { width:930px; transform:scale(.38); transform-origin:top left; margin-bottom:-812px; }
+  /* 전체 레이아웃: 폼 → 미리보기 세로 배치 */
+  .inv-wrap { grid-template-columns:1fr !important; gap:10px !important; }
+
+  /* 입력 폼 카드 */
+  .inv-form-card { padding:12px !important; }
+  .inv-form-card .inv-grid-2 { grid-template-columns:1fr 1fr !important; gap:6px !important; }
+  .inv-field { margin-bottom:8px !important; }
+  .inv-field input, .inv-field select { height:40px !important; font-size:14px !important; }
+
+  /* 하단 버튼 3개 — 한 줄 균등 배치 */
+  .inv-actions { display:grid !important; grid-template-columns:1fr 1fr 1fr !important; gap:4px !important; flex-wrap:unset !important; }
+  .inv-actions button { flex:unset !important; font-size:10px !important; padding:0 2px !important; white-space:nowrap !important; min-width:0 !important; min-height:40px !important; overflow:hidden !important; }
+  /* 이모지 제거 후 텍스트만 표시 — 모바일 버튼 내부 이모지 숨김 */
+  #invPrintBtn, #invSaveImgBtn { font-size:10px !important; letter-spacing:-0.3px !important; }
+  /* 모바일: 이모지 숨기고 텍스트만 */
+  .btn-icon { display:none !important; }
+  .btn-text { display:inline !important; font-size:10px !important; }
+  #invPreviewBtn { font-size:10px !important; }
+
+  /* 가격기준/로스율 → 2열 배치 */
+  .inv-loss-row { grid-template-columns:1.8fr 1fr !important; }
+
+  /* ── 미리보기 영역 ── */
+  .inv-preview-wrap {
+    padding: 10px 10px 0 10px !important;
+    border-radius: 14px !important;
+    background: #f0f0f0 !important;
+    border: none !important;
+  }
+  .inv-preview-label { margin-bottom:8px !important; font-size:12px !important; color:#888 !important; }
+
+  /* A4 문서: JS로 scale/height 동적 계산 */
+  .inv-preview-wrap > div[style] {
+    overflow: hidden !important;
+    padding: 0 !important;
+    width: 100% !important;
+    position: relative !important;
+    /* height는 updateInvoiceScale() JS에서 직접 세팅 */
+  }
+  #invoiceDoc {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 930px !important;
+    min-height: 0 !important;
+    transform: scale(var(--inv-scale, 0.36)) !important;
+    transform-origin: top left !important;
+    margin: 0 !important;
+  }
 }
 @media print {
-  @page { size:A4 portrait; margin:0; }
-  html, body { width:210mm !important; height:297mm !important; margin:0 !important; background:#fff !important; overflow:hidden !important; }
-  body.print-invoice * { visibility:hidden !important; }
-  body.print-invoice #invoiceDoc, body.print-invoice #invoiceDoc * { visibility:visible !important; }
-  body.print-invoice #invoiceDoc { position:absolute !important; left:0 !important; top:0 !important; width:210mm !important; min-height:297mm !important; border:0 !important; box-shadow:none !important; margin:0 !important; padding:19mm 18mm 18mm !important; transform:none !important; }
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+  html, body {
+    width: 210mm !important;
+    height: 297mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    overflow: hidden !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  /* 브라우저 헤더/푸터 제거용 (Chrome 지원) */
+  body::before, body::after { display: none !important; }
+  body.print-invoice * { visibility: hidden !important; }
+  body.print-invoice #invoiceDoc,
+  body.print-invoice #invoiceDoc * { visibility: visible !important; }
+  body.print-invoice #invoiceDoc {
+    /* 930px → A4 210mm 전체로 스케일, 비율: 210mm/930px = 약 0.7097 (96dpi 기준) */
+    /* 실제 인쇄 DPI는 다양하므로 mm 단위로 width 지정 */
+    position: fixed !important;
+    left: 0 !important; top: 0 !important;
+    width: 930px !important;
+    min-height: auto !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 84px 82px 82px !important;
+    /* 930px를 210mm(≈793px @96dpi)에 맞게 축소 */
+    transform: scale(0.853) !important;
+    transform-origin: top left !important;
+  }
 }
 </style>
 
@@ -786,15 +950,14 @@ function unlock() {
   <div class="inv-form-card">
     <h2>견적서 작성</h2>
 
-    <div class="inv-grid-2">
-      <div class="inv-field">
-        <div class="inv-label">BILL TO</div>
-        <input type="text" id="invBillTo">
-      </div>
-      <div class="inv-field">
-        <div class="inv-label">시공 예정일</div>
-        <input type="text" id="invWorkDate">
-      </div>
+    <div class="inv-field">
+      <div class="inv-label">BILL TO</div>
+      <input type="text" id="invBillTo">
+    </div>
+
+    <div class="inv-field">
+      <div class="inv-label">시공 예정일</div>
+      <input type="text" id="invWorkDate">
     </div>
 
     <div class="inv-field">
@@ -827,19 +990,26 @@ function unlock() {
           <select id="invUnit1" class="inv-unit-select">
             <option value="M2">M2</option>
             <option value="PY">PY</option>
+            <option value="BOX">BOX</option>
           </select>
         </div>
         <div class="inv-field">
-          <div class="inv-label">면적 입력</div>
+          <div class="inv-label">수량 입력</div>
           <input type="number" id="invQty1" class="inv-qty-input" step="0.01" min="0">
         </div>
       </div>
-      <div class="inv-field">
-        <div class="inv-label">가격 기준</div>
-        <select id="invParty1" class="inv-party-select">
-          <option value="consumer">소비자가</option>
-          <option value="vendor">업체가</option>
-        </select>
+      <div class="inv-loss-row" style="display:grid; grid-template-columns:1.8fr 1fr; gap:8px; align-items:end; margin-bottom:12px;">
+        <div class="inv-field" style="margin-bottom:0;">
+          <div class="inv-label">가격 기준</div>
+          <select id="invParty1" class="inv-party-select">
+            <option value="consumer">소비자가</option>
+            <option value="vendor">업체가</option>
+          </select>
+        </div>
+        <div class="inv-field" style="margin-bottom:0;">
+          <div class="inv-label">로스율(%)</div>
+          <input type="number" id="invLoss1" class="inv-loss-input" step="0.1" min="0" placeholder="0">
+        </div>
       </div>
     </div>
 
@@ -853,8 +1023,8 @@ function unlock() {
 
     <div class="inv-actions">
       <button type="button" id="invPreviewBtn">미리보기 갱신</button>
-      <button type="button" id="invPrintBtn" class="secondary">🖨 인쇄</button>
-      <button type="button" id="invSaveImgBtn" class="secondary">💾 이미지 저장</button>
+      <button type="button" id="invPrintBtn" class="secondary"><span class="btn-icon">🖨</span><span class="btn-text"> 인쇄</span></button>
+      <button type="button" id="invSaveImgBtn" class="secondary"><span class="btn-icon">💾</span><span class="btn-text"> 이미지저장</span></button>
     </div>
   </div>
 
@@ -866,7 +1036,7 @@ function unlock() {
     <div style="overflow-x:auto;">
       <div id="invoiceDoc">
         <div class="inv-brand">JIBOKDEUKMARU</div>
-        <div class="inv-title">INVOICE</div>
+        <div class="inv-title">INVOICE<span id="pvInvoiceSubtitle" style="font-size:56px; font-family:'GmarketSans','G마켓 산스','Gmarket Sans','NanumGothicExtraBold','맑은 고딕',sans-serif; font-weight:900; letter-spacing:-1px;"></span></div>
 
         <div class="inv-meta-grid">
           <div>
@@ -1266,9 +1436,12 @@ if (document.readyState === 'loading') {
 // ============================================================
 const SHEET_CONFIG = {
     ID: '1lu3P1g_CTFdofwpWITXQgGKisUoZLPdFD1mxC29wf_k',
-    PRICE:   'PRICE',
-    STOCK:   'STOCK',
-    TOOLTIP: 'TOOLTIP'
+    PRICE:    'PRICE',
+    STOCK:    'STOCK',
+    TOOLTIP:  'TOOLTIP',
+    RESERVE:  'RESERVE',   // 예약일정 시트
+    ORDER:    '발주현황',    // <품번/발주물량/단위/비고>
+    ARRIVAL:  '입고예정일',  // <품번/입고물량/단위/비고>
 };
 
 // 구글 시트 gviz JSON 파싱 공통 함수
@@ -1390,10 +1563,29 @@ function initExcelUpload() {
     const statusEl   = document.getElementById('uploadStatus');
     if (!fileInput || !uploadBtn || !statusEl) return;
 
-    // 마지막 업로드 시간 복원
-    const lastUpload = localStorage.getItem('baram_last_upload');
+    // 마지막 업로드 시간 복원 — GAS에서 공유 시간 가져오기
     const lastEl = document.getElementById('lastUploadTime');
-    if (lastEl && lastUpload) lastEl.textContent = `🕐 마지막 업로드: ${lastUpload}`;
+    if (lastEl) {
+        lastEl.textContent = '🕐 업로드 시간 확인 중...';
+        fetch(`${GAS_URL}?spreadsheetId=${SHEET_CONFIG.ID}`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.uploadTime) {
+                    const d = new Date(data.uploadTime);
+                    const pad = n => String(n).padStart(2, '0');
+                    const str = `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+                    lastEl.textContent = `🕐 마지막 업로드: ${str}`;
+                } else {
+                    lastEl.textContent = '';
+                }
+            })
+            .catch(() => {
+                // GAS 실패 시 localStorage 폴백
+                const local = localStorage.getItem('baram_last_upload');
+                if (local) lastEl.textContent = `🕐 마지막 업로드: ${local}`;
+                else lastEl.textContent = '';
+            });
+    }
 
     let selectedFile = null;
 
@@ -1422,23 +1614,23 @@ function initExcelUpload() {
 
             // 2. 모든 시트를 STOCK 형식으로 정제해서 합치기
             const matrixData = [];
-            matrixData.push(['품번', 'LOT 및 입고일', 'BOX', '현재고(㎡)', '총 BOX', '총 재고(㎡)']);
+            matrixData.push(['시트명', '품번', 'LOT 및 입고일', 'BOX', '현재고(㎡)', '총 BOX', '총 재고(㎡)']);
 
             const COL_MAP = {
-                'C#14':           { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:15, totalM2Col:16 },
-                'C#15':           { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:19, totalM2Col:20 },
-                'C#18':           { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:15, totalM2Col:16 },
-                'C#19':           { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:15, totalM2Col:16 },
-                'A#14':           { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:15, totalM2Col:16 },
-                'A#15':           { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:17, totalM2Col:18 },
-                'A#16':           { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:17, totalM2Col:18 },
-                'A#171':          { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:19, totalM2Col:20 },
-                'A#17':           { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:19, totalM2Col:20 },
-                'A#18':           { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:33, totalM2Col:34 },
-                'A#19':           { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:17, totalM2Col:18 },
-                'A#20':           { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:17, totalM2Col:18 },
-                'D#,E#,선일,성원특': { itemCol:0, lotCol:1, boxCol:4, m2Col:5, totalBoxCol:16, totalM2Col:17 },
-                '바람1':           { itemCol:1, lotCol:2, boxCol:4, m2Col:5, totalBoxCol:13, totalM2Col:14 },
+                'C#14':           { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:15, totalM2Col:16, reserveStartCol:5 },
+                'C#15':           { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:19, totalM2Col:20, reserveStartCol:5 },
+                'C#18':           { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:15, totalM2Col:16, reserveStartCol:5 },
+                'C#19':           { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:15, totalM2Col:16, reserveStartCol:5 },
+                'A#14':           { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:15, totalM2Col:16, reserveStartCol:5 },
+                'A#15':           { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:17, totalM2Col:18, reserveStartCol:5 },
+                'A#16':           { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:17, totalM2Col:18, reserveStartCol:5 },
+                'A#171':          { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:19, totalM2Col:20, reserveStartCol:5 },
+                'A#17':           { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:19, totalM2Col:20, reserveStartCol:5 },
+                'A#18':           { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:33, totalM2Col:34, reserveStartCol:4 },
+                'A#19':           { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:17, totalM2Col:18, reserveStartCol:5 },
+                'A#20':           { itemCol:0, lotCol:1, boxCol:3, m2Col:4,  totalBoxCol:17, totalM2Col:18, reserveStartCol:5 },
+                'D#,E#,선일,성원특': { itemCol:0, lotCol:1, boxCol:4, m2Col:5, totalBoxCol:16, totalM2Col:17, reserveStartCol:6 },
+                '바람1':           { itemCol:1, lotCol:2, boxCol:4, m2Col:5, totalBoxCol:13, totalM2Col:14, reserveStartCol:6 },
             };
 
             function excelDateToStr(val) {
@@ -1550,12 +1742,14 @@ function initExcelUpload() {
                     const totBox = typeof totalBox === 'number' ? roundNum(totalBox) : (hasValue(totalBox) ? totalBox : '-');
                     const totM2  = typeof totalM2  === 'number' ? roundNum(totalM2)  : (hasValue(totalM2)  ? totalM2  : '-');
 
-                    matrixData.push([currentItemCode, lotStr, box, curM2, totBox, totM2]);
+                    matrixData.push([sheetName, currentItemCode, lotStr, box, curM2, totBox, totM2]);
                     i++;
                 }
             });
 
             if (matrixData.length <= 1) throw new Error('엑셀에서 읽을 데이터가 없습니다.');
+
+            // ── 예약 데이터는 GAS에서 구글시트 직접 파싱으로 처리 ──
 
             // 업로드 전 확인
             if (!confirm('파일을 업로드 하시겠습니까?')) {
@@ -1567,27 +1761,31 @@ function initExcelUpload() {
 
             statusEl.textContent = '구글시트에 전송 중...';
 
-            // 3. Apps Script로 POST 전송
+            // 3. 전체 데이터를 한 번에 전송
+            statusEl.textContent = '구글시트에 전송 중...';
+
             const res = await fetch(GAS_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'text/plain' }, // CORS 우회
+                headers: { 'Content-Type': 'text/plain' },
                 body: JSON.stringify({
                     spreadsheetId: SHEET_CONFIG.ID,
                     sheetName: SHEET_CONFIG.STOCK,
                     matrixData: matrixData
                 })
             });
+            const lastResult = await res.json();
+            if (lastResult.status !== 'success') throw new Error(lastResult.message || '서버 오류');
 
-            const result = await res.json();
+            const result = lastResult;
 
             if (result.status === 'success') {
                 alert('파일이 정상적으로 업로드되었습니다.');
 
-                // 마지막 업로드 시간 저장
+                // 마지막 업로드 시간 — GAS에 기록 (모든 기기 공유)
                 const now = new Date();
                 const pad = n => String(n).padStart(2, '0');
                 const timeStr = `${now.getFullYear()}.${pad(now.getMonth()+1)}.${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-                localStorage.setItem('baram_last_upload', timeStr);
+                localStorage.setItem('baram_last_upload', timeStr); // 폴백용
                 const lastEl = document.getElementById('lastUploadTime');
                 if (lastEl) lastEl.textContent = `🕐 마지막 업로드: ${timeStr}`;
                 statusEl.textContent = '✅ 구글시트 반영 완료!';
@@ -1641,6 +1839,136 @@ async function fetchStockData() {
         tbody.innerHTML = `<tr><td colspan="6" style="padding:25px;color:#d63031;font-weight:bold;text-align:center;">
             시트 데이터를 읽을 수 없습니다. (원인: ${error.message})</td></tr>`;
     }
+}
+
+// ============================================================
+//  품번 상세 모달 — 발주현황 / 입고예정일 / 예약일정
+// ============================================================
+async function openItemDetail(itemCode) {
+    const modal  = document.getElementById('itemDetailModal');
+    const title  = document.getElementById('itemDetailTitle');
+    const stockEl   = document.getElementById('itemDetailStock');
+    const orderEl   = document.getElementById('itemDetailOrder');
+    const arrivalEl = document.getElementById('itemDetailArrival');
+    const reserveEl = document.getElementById('itemDetailReserve');
+
+    title.textContent = itemCode;
+    stockEl.innerHTML = orderEl.innerHTML = arrivalEl.innerHTML = reserveEl.innerHTML =
+        '<span style="color:#aaa;">불러오는 중...</span>';
+    modal.style.display = 'flex';
+
+    const noData = '<span style="color:#aaa;">정보 없음</span>';
+    const code = itemCode.trim().toUpperCase();
+
+    // 발주현황, 입고예정일, 예약일정, STOCK 병렬 fetch
+    try {
+        const [orderRows, arrivalRows, reserveRows, stockRows] = await Promise.all([
+            fetchSheetJson(SHEET_CONFIG.ORDER).catch(() => null),
+            fetchSheetJson(SHEET_CONFIG.ARRIVAL).catch(() => null),
+            fetchSheetJson(SHEET_CONFIG.RESERVE).catch(() => null),
+            fetchSheetJson(SHEET_CONFIG.STOCK).catch(() => null),
+        ]);
+
+        // ── 잔여 BOX 합산 — STOCK 시트에서 해당 품번 총BOX(c[4]) 합산 ──
+        // STOCK 헤더: [품번(0), LOT(1), BOX(2), 현재고(3), 총BOX(4), 총재고(5)]
+        const stockFiltered = (stockRows || []).filter(r => {
+            const c = r?.c?.[0];
+            const v = c ? String(c.v !== undefined ? c.v : '').trim().toUpperCase() : '';
+            return v === code;
+        });
+        if (stockFiltered.length) {
+            let totalBox = 0;
+            stockFiltered.forEach(r => {
+                const c4 = r.c[4]; // 총BOX 컬럼
+                const v = c4 ? parseFloat(c4.v !== undefined ? c4.v : 0) : 0;
+                if (!isNaN(v)) totalBox += v;
+            });
+            stockEl.innerHTML = `<span style="font-size:22px;">${totalBox % 1 === 0 ? totalBox : totalBox.toFixed(2)} BOX</span>`;
+        } else { stockEl.innerHTML = noData; }
+
+        // ── 발주현황 ──
+        const orders = (orderRows || []).filter(r => {
+            const c = getCellVal(r?.c?.[0]).trim().toUpperCase();
+            return c === code;
+        });
+        if (orders.length) {
+            orderEl.innerHTML = orders.map(r => {
+                const qty  = getCellVal(r.c[1]);
+                const unit = getCellVal(r.c[2]);
+                const note = getCellVal(r.c[3]);
+                return `<div style="padding:6px 0; border-bottom:1px solid #f0f0f0;">
+                    발주물량 <strong>${qty} ${unit}</strong>${note ? ` · ${note}` : ''}
+                </div>`;
+            }).join('');
+        } else { orderEl.innerHTML = noData; }
+
+        // ── 입고예정일 ──
+        const arrivals = (arrivalRows || []).filter(r => {
+            const c = getCellVal(r?.c?.[0]).trim().toUpperCase();
+            return c === code;
+        });
+        if (arrivals.length) {
+            arrivalEl.innerHTML = arrivals.map(r => {
+                const qty  = getCellVal(r.c[1]);
+                const unit = getCellVal(r.c[2]);
+                const note = getCellVal(r.c[3]);
+                return `<div style="padding:6px 0; border-bottom:1px solid #f0f0f0;">
+                    입고물량 <strong>${qty} ${unit}</strong>${note ? ` · ${note}` : ''}
+                </div>`;
+            }).join('');
+        } else { arrivalEl.innerHTML = noData; }
+
+        // ── 예약일정 — RESERVE 시트에서 해당 품번 필터 + 날짜 오름차순 정렬 ──
+        const reserveItems = parseReserveFromSheet(reserveRows, code);
+        if (reserveItems.length) {
+            reserveEl.innerHTML = reserveItems.map(item =>
+                `<div style="display:grid; grid-template-columns:1fr 60px 100px; gap:8px; padding:7px 4px; border-bottom:1px solid #f0f0f0; align-items:center;">
+                    <span style="font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.company}</span>
+                    <span style="color:#555; text-align:center; font-size:13px;">${item.area ? item.area + '평' : '—'}</span>
+                    <span style="color:#888; font-size:12px; text-align:right; white-space:nowrap;">${item.date || '—'}</span>
+                </div>`
+            ).join('');
+        } else { reserveEl.innerHTML = noData; }
+
+    } catch (e) {
+        stockEl.innerHTML = orderEl.innerHTML = arrivalEl.innerHTML = reserveEl.innerHTML =
+            `<span style="color:#d63031;">오류: ${e.message}</span>`;
+    }
+}
+
+// ── RESERVE 시트에서 특정 품번 예약 데이터 파싱 + 날짜 오름차순 정렬 ──
+// RESERVE 시트 컬럼: [품번(0), 업체명(1), 평형(2), 일정(3)]
+function parseReserveFromSheet(rows, targetCode) {
+    if (!rows) return [];
+    const results = [];
+    const target = (targetCode || '').trim().toUpperCase();
+    rows.forEach(row => {
+        if (!row || !row.c) return;
+        const c0 = row.c[0];
+        const code = c0 ? String(c0.v !== undefined ? c0.v : (c0 || '')).trim().toUpperCase() : '';
+        if (!code || code === '품번') return; // 헤더 스킵
+        if (code !== target) return;
+        const company = row.c[1] ? String(row.c[1].v !== undefined ? row.c[1].v : '').trim() : '';
+        const area    = row.c[2] ? String(row.c[2].v !== undefined ? row.c[2].v : '').trim().replace(/[^0-9.]/g, '') : '';
+        const date    = row.c[3] ? String(row.c[3].v !== undefined ? row.c[3].v : '').trim() : '';
+        if (company) results.push({ company, area, date });
+    });
+
+    // 날짜 오름차순 정렬 (26.6.10 형태 → 비교 가능하게 정규화)
+    function parseDateScore(d) {
+        if (!d) return 99999999;
+        // "26.7월", "26.6초", "26.6~7월" 같은 텍스트 날짜 처리
+        const m = d.match(/(\d{2})\.(\d{1,2})[.월]?(\d{0,2})/);
+        if (m) {
+            const yy = parseInt(m[1]) || 99;
+            const mm = parseInt(m[2]) || 99;
+            const dd = parseInt(m[3]) || 0;
+            return yy * 10000 + mm * 100 + dd;
+        }
+        return 99999999;
+    }
+    results.sort((a, b) => parseDateScore(a.date) - parseDateScore(b.date));
+    return results;
 }
 
 function renderStockTable(rows) {
@@ -1720,13 +2048,23 @@ function renderStockTable(rows) {
             : d.totalBox;
 
         tr.innerHTML = `
-            <td style="text-align:center;">${displayItemCode}</td>
+            <td style="text-align:center; cursor:pointer;">${
+                displayItemCode
+                    ? `<span class="item-code-link" data-code="${d.itemCode}" style="text-decoration:underline; text-underline-offset:3px;">${displayItemCode}</span>`
+                    : ''
+            }</td>
             <td style="text-align:center;">${d.lotInfo}</td>
             <td style="text-align:center;">${d.boxSpec}</td>
             <td style="text-align:center;">${d.curStock}</td>
             <td class="total-value" style="text-align:center;">${totalBoxDisplay}</td>
             <td class="total-value" style="text-align:center;">${m2Display}</td>
         `;
+
+        // 품번 클릭 → 상세 모달
+        if (isNewGroup) {
+            const link = tr.querySelector('.item-code-link');
+            if (link) link.addEventListener('click', () => openItemDetail(d.itemCode));
+        }
 
         // 툴팁 — TOOLTIP 시트 기반
         tr.addEventListener('mousemove', async (e) => {
@@ -1776,6 +2114,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+    // 품번 상세 모달 닫기
+    document.getElementById('itemDetailClose')?.addEventListener('click', () => {
+        document.getElementById('itemDetailModal').style.display = 'none';
+    });
+    document.getElementById('itemDetailModal')?.addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) e.currentTarget.style.display = 'none';
+    });
 });
 
 // ============================================================
@@ -1805,6 +2151,7 @@ function bindInvoiceFieldEvents(root=document) {
         el.dataset.invoiceBound = '1';
         el.addEventListener('input', renderInvoice);
         if (el.tagName === 'SELECT') el.addEventListener('change', renderInvoice);
+        if (el.type === 'checkbox') el.addEventListener('change', renderInvoice);
     });
 }
 
@@ -1829,19 +2176,26 @@ function createInvoiceItem(index) {
             <select id="invUnit${index}" class="inv-unit-select">
               <option value="M2">M2</option>
               <option value="PY">PY</option>
+              <option value="BOX">BOX</option>
             </select>
           </div>
           <div class="inv-field">
-            <div class="inv-label">면적 입력</div>
+            <div class="inv-label">수량 입력</div>
             <input type="number" id="invQty${index}" class="inv-qty-input" step="0.01" min="0">
           </div>
         </div>
-        <div class="inv-field">
-          <div class="inv-label">가격 기준</div>
-          <select id="invParty${index}" class="inv-party-select">
-            <option value="consumer">소비자가</option>
-            <option value="vendor">업체가</option>
-          </select>
+        <div class="inv-loss-row" style="display:grid; grid-template-columns:1.8fr 1fr; gap:8px; align-items:end; margin-bottom:12px;">
+          <div class="inv-field" style="margin-bottom:0;">
+            <div class="inv-label">가격 기준</div>
+            <select id="invParty${index}" class="inv-party-select">
+              <option value="consumer">소비자가</option>
+              <option value="vendor">업체가</option>
+            </select>
+          </div>
+          <div class="inv-field" style="margin-bottom:0;">
+            <div class="inv-label">로스율(%)</div>
+            <input type="number" id="invLoss${index}" class="inv-loss-input" step="0.1" min="0" placeholder="0">
+          </div>
         </div>
       </div>
     `.trim();
@@ -1855,6 +2209,26 @@ function addInvoiceItem() {
     fillInvoiceSelects();
     bindInvoiceFieldEvents(item);
     renderInvoice();
+}
+
+// 모바일에서 A4 미리보기 scale 동적 계산
+function updateInvoiceScale() {
+    const isMob = window.innerWidth <= 768;
+    if (!isMob) return;
+    // overflow-x:auto 인 div를 정확히 targeting
+    const wrap = document.querySelector('#invoiceTab .inv-preview-wrap > div[style]');
+    if (!wrap) return;
+    // 패딩 제외한 실제 너비
+    const containerW = wrap.clientWidth || (window.innerWidth - 44);
+    const scale = Math.max(0.15, Math.min(1, containerW / 930));
+    document.documentElement.style.setProperty('--inv-scale', scale.toFixed(4));
+    // invoiceDoc 실제 원본 높이(scale 전) 기준으로 컨테이너 높이 세팅
+    const doc = document.getElementById('invoiceDoc');
+    const rawH = doc ? doc.scrollHeight : 1312;
+    const scaledH = Math.round(rawH * scale);
+    wrap.style.height = scaledH + 'px';
+    wrap.style.overflow = 'hidden';
+    wrap.style.position = 'relative';
 }
 
 function initInvoiceTab() {
@@ -1884,8 +2258,13 @@ function initInvoiceTab() {
         document.getElementById('invPrintBtn').addEventListener('click', printInvoice);
         document.getElementById('invSaveImgBtn').addEventListener('click', saveInvoiceImage);
         document.getElementById('invAddItemBtn')?.addEventListener('click', addInvoiceItem);
+
+        // 모바일 scale 계산 + resize 대응
+        window.addEventListener('resize', updateInvoiceScale);
     }
     renderInvoice();
+    // 탭 진입마다 scale 재계산 (DOM 렌더 후)
+    setTimeout(updateInvoiceScale, 80);
 }
 
 function formatInvSize(spec='') {
@@ -1899,25 +2278,49 @@ function formatInvSize(spec='') {
 }
 
 function getInvItemFromBox(box) {
-    const code = box.querySelector('.inv-product-select')?.value;
-    const unit = box.querySelector('.inv-unit-select')?.value || 'M2';
-    const qty  = parseFloat(box.querySelector('.inv-qty-input')?.value) || 0;
+    const code  = box.querySelector('.inv-product-select')?.value;
+    const unit  = box.querySelector('.inv-unit-select')?.value || 'M2';
+    const qty   = parseFloat(box.querySelector('.inv-qty-input')?.value) || 0;
     const party = box.querySelector('.inv-party-select')?.value || 'consumer';
+    const lossRate = parseFloat(box.querySelector('.inv-loss-input')?.value) || 0;
     if (!code) return null;
     const p = products.find(x => x.code === code);
     if (!p) return null;
 
-    // 단가: 단위에 따라 m² or 평 단가 사용
-    const unitPrice = unit === 'M2'
-        ? getUnitValue(p, party, 'sqm', 'included')
-        : getUnitValue(p, party, 'py', 'included');
+    const PY_FACTOR = 3.24; // 1평 = 3.24㎡ (계산기 탭과 동일)
+    const lossMultiplier = lossRate > 0 ? (1 + lossRate / 100) : 1;
 
-    const total = Math.round(qty * unitPrice);
+    let displayQty, unitPrice, total;
+
+    if (unit === 'BOX') {
+        // BOX 입력: 박스수 그대로
+        const boxes   = Math.ceil(qty);
+        unitPrice     = getUnitValue(p, party, 'box', 'material');
+        displayQty    = boxes;
+        total         = Math.round(boxes * unitPrice);
+    } else if (unit === 'M2') {
+        // M2 입력: 입력값 그대로 (박스 환산 없음)
+        const sqmWithLoss = qty * lossMultiplier;
+        unitPrice         = getUnitValue(p, party, 'sqm', 'included');
+        displayQty        = Math.round(sqmWithLoss * 100) / 100;
+        total             = Math.round(sqmWithLoss * unitPrice);
+    } else {
+        // PY 입력 → 박스 올림 후 실제 커버 평수 출력
+        const sqmInput        = qty * PY_FACTOR;
+        const sqmWithLoss     = sqmInput * lossMultiplier;
+        const boxes           = Math.ceil(sqmWithLoss / p.box_m2);
+        const coverageSqm     = boxes * p.box_m2;
+        const coveragePy      = coverageSqm / PY_FACTOR;
+        unitPrice             = getUnitValue(p, party, 'py', 'included');
+        displayQty            = Math.round(coveragePy * 100) / 100;
+        total                 = Math.round((Math.round(coveragePy * 100) * unitPrice) / 100);
+    }
+
     return {
         name: `BARAM\n${p.code}`,
         size: formatInvSize(p.spec),
         unit,
-        qty,
+        qty: displayQty,
         unitPrice,
         total,
     };
@@ -1928,6 +2331,7 @@ function fmtNum(n) {
 }
 
 function renderInvoice() {
+
     // 메타
     document.getElementById('pvBillTo').textContent  = document.getElementById('invBillTo')?.value  || '—';
     document.getElementById('pvWorkDate').textContent = document.getElementById('invWorkDate')?.value || '—';
@@ -1991,9 +2395,9 @@ function renderInvoice() {
         const tr = document.createElement('tr');
         tr.className = cls;
         if (val < 0) {
-            tr.innerHTML = `<td class="total-label">${label}</td><td class="td-won negative-won">-₩</td><td class="amount">${fmtNum(Math.abs(val))}</td>`;
+            tr.innerHTML = `<td class="total-label">${label}</td><td class="td-won" style="text-align:right; padding-right:2px;">-₩</td><td class="amount">${fmtNum(Math.abs(val))}</td>`;
         } else {
-            tr.innerHTML = `<td class="total-label">${label}</td><td class="td-won">₩</td><td class="amount">${fmtNum(val)}</td>`;
+            tr.innerHTML = `<td class="total-label">${label}</td><td class="td-won" style="text-align:right; padding-right:2px;">₩</td><td class="amount">${fmtNum(val)}</td>`;
         }
         totalBody?.appendChild(tr);
     };
@@ -2003,24 +2407,55 @@ function renderInvoice() {
     if (adjust !== 0) makeTotal('단수정리', adjust);
     makeTotal('GRAND TOTAL', grand, 'grand');
 
-    // REMARKS 단위 표시 업데이트
-    const unit1 = document.getElementById('invUnit1')?.value || 'M2';
-    document.getElementById('pvRemarks').innerHTML =
-        `<div class="inv-remarks-title">REMARKS</div>
-단&nbsp;&nbsp;&nbsp;&nbsp;위 : 원/${unit1}<br>
-<span class="inv-red">실측후 물량은 상이할수있음</span><br>
+    // REMARKS 단위 표시 업데이트 - 모든 제품 박스의 단위 확인
+    const allUnits = [...document.querySelectorAll('[data-inv-item] .inv-unit-select')]
+        .map(s => s.value).filter(Boolean);
+    const unit1 = allUnits[0] || 'M2';
+    const allBox = allUnits.length > 0 && allUnits.every(u => u === 'BOX');
+
+    // INVOICE(자재만) 표시 여부
+    const subtitleEl = document.getElementById('pvInvoiceSubtitle');
+    if (subtitleEl) subtitleEl.textContent = allBox ? '(자재만)' : '';
+
+    if (allBox) {
+        // BOX 전용 REMARKS (빨간색 항목: 결제조건+운임비)
+        document.getElementById('pvRemarks').innerHTML =
+            `<div class="inv-remarks-title">REMARKS</div>
+단&nbsp;&nbsp;&nbsp;&nbsp;위 : 원/BOX<br>
+<span class="inv-red">결제조건 : 완납 후, 출고</span><br>
+<span class="inv-red">운임비 착불</span><br>
+원목마루는 천연 원목을 사용하여 나무가 가지고 있는 색상, 나뭇결, 옹이 등 자연질감이 그대로 표현되므로 시공시<br>
+이색현상이나 옹이 여부등은 하자사항이 아님을 알려드립니다.`;
+    } else if (unit1 === 'PY') {
+        document.getElementById('pvRemarks').innerHTML =
+            `<div class="inv-remarks-title">REMARKS</div>
+단&nbsp;&nbsp;&nbsp;&nbsp;위 : 원/PY<br>
+<span class="inv-red">실측 후 물량은 상이할 수 있음</span><br>
 <span class="inv-red">걸레받이 별도</span><br>
 시&nbsp;&nbsp;&nbsp;&nbsp;공 : 본드 - 친환경 황토풀 사용 기준<br>
 결제조건 : 계약금 50%, 중도금 30%(시공 일주일전) 잔금 20%(시공직후)<br>
 원목마루는 천연 원목을 사용하여 나무가 가지고 있는 색상, 나뭇결, 옹이 등 자연질감이 그대로 표현되므로 시공시<br>
 이색현상이나 옹이 여부등은 하자사항이 아님을 알려드립니다.`;
+    } else {
+        document.getElementById('pvRemarks').innerHTML =
+            `<div class="inv-remarks-title">REMARKS</div>
+단&nbsp;&nbsp;&nbsp;&nbsp;위 : 원/M2<br>
+<span class="inv-red">실측 후 물량은 상이할 수 있음</span><br>
+<span class="inv-red">걸레받이 별도</span><br>
+시&nbsp;&nbsp;&nbsp;&nbsp;공 : 본드 - 친환경 황토풀 사용 기준<br>
+결제조건 : 계약금 50%, 중도금 30%(시공 일주일전) 잔금 20%(시공직후)<br>
+원목마루는 천연 원목을 사용하여 나무가 가지고 있는 색상, 나뭇결, 옹이 등 자연질감이 그대로 표현되므로 시공시<br>
+이색현상이나 옹이 여부등은 하자사항이 아님을 알려드립니다.`;
+    }
+    // 모바일: 내용 변경 후 높이 재계산
+    if (window.innerWidth <= 768) setTimeout(updateInvoiceScale, 30);
 }
 
 function printInvoice() {
     renderInvoice();
     document.body.classList.add('print-invoice');
     window.print();
-    setTimeout(() => document.body.classList.remove('print-invoice'), 500);
+    setTimeout(() => document.body.classList.remove('print-invoice'), 800);
 }
 
 window.addEventListener('afterprint', () => {
@@ -2031,32 +2466,136 @@ async function saveInvoiceImage() {
     renderInvoice();
     const el = document.getElementById('invoiceDoc');
     if (!el) return;
+
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    // 출력 해상도: PC 3x, 모바일 2x (메모리 제한)
+    const OUTPUT_SCALE = isMobile ? 2 : 3;
+
     try {
-        const canvas = await html2canvas(el, { backgroundColor:'#ffffff', scale:2, useCORS:true, logging:false });
-        const now = new Date();
-        const pad = n => String(n).padStart(2,'0');
-        const stamp = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}`;
-        const fileName = `견적서_${stamp}.png`;
-        if (window.showSaveFilePicker) {
-            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+        // 1. invoiceDoc를 완전히 클론해서 숨겨진 컨테이너에 넣고 캡처
+        //    원본은 건드리지 않아 검정 줄/레이아웃 깨짐 없음
+        const clone = el.cloneNode(true);
+        const container = document.createElement('div');
+        container.style.cssText = [
+            'position:fixed',
+            'left:-99999px',
+            'top:0',
+            'width:930px',
+            'background:#fff',
+            'pointer-events:none',
+            'z-index:-1',
+        ].join(';');
+        // 클론: border/shadow 제거 (검정 줄 원인 제거)
+        clone.style.cssText = [
+            'width:930px',
+            'min-height:1312px',
+            'background:#fff',
+            'border:none',
+            'box-shadow:none',
+            'transform:none',
+            'position:static',
+            'margin:0',
+            'padding:84px 82px 82px',
+            'font-family:KoPubWorldDotum,맑은 고딕,Malgun Gothic,Pretendard,Arial,sans-serif',
+            'font-size:11px',
+            'color:#0f172a',
+        ].join(';');
+        container.appendChild(clone);
+        document.body.appendChild(container);
+
+        // 2. 렌더링 대기
+        await new Promise(r => setTimeout(r, isMobile ? 300 : 80));
+
+        // 3. 캡처
+        const canvas = await html2canvas(clone, {
+            backgroundColor: '#ffffff',
+            scale: OUTPUT_SCALE,
+            useCORS: true,
+            logging: false,
+            width:  930,
+            height: clone.scrollHeight,
+            windowWidth: 930,
+        });
+
+        // 4. 컨테이너 제거
+        document.body.removeChild(container);
+
+        // 6. 파일명
+        const rawDate    = (document.getElementById('invDate')?.value || '').trim();
+        const dateStr    = rawDate.replace(/^20(\d\d)/, '$1');
+        const billTo     = (document.getElementById('invBillTo')?.value || '').trim();
+        const safeBillTo = billTo.replace(/[\\:*?"<>|]/g, '').trim();
+        const fileName   = safeBillTo
+            ? `견적서(${dateStr})_${safeBillTo}.jpg`
+            : `견적서(${dateStr}).jpg`;
+
+        // 7. 저장 — JPG blob
+        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.95));
+        if (!isMobile && window.showSaveFilePicker) {
             const handle = await window.showSaveFilePicker({
                 suggestedName: fileName,
-                types: [{ description: 'PNG 이미지', accept: { 'image/png': ['.png'] } }]
+                types: [{ description: 'JPG 이미지', accept: { 'image/jpeg': ['.jpg'] } }]
             });
             const writable = await handle.createWritable();
             await writable.write(blob);
             await writable.close();
         } else {
-            const a = document.createElement('a');
-            a.href = canvas.toDataURL('image/png');
-            a.download = fileName;
-            a.click();
+            // 모바일: ObjectURL 방식 (iOS Safari는 a.click() 다운로드가 막혀 새탭으로 열기)
+            const url = URL.createObjectURL(blob);
+            if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+                // iOS는 다운로드 불가 → 새 탭에서 이미지 열기 (길게 눌러 저장)
+                window.open(url, '_blank');
+                showToast('이미지를 길게 눌러 저장하세요');
+            } else {
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
+            }
         }
         showToast('이미지 저장 완료');
     } catch(e) {
         if (e && e.name === 'AbortError') return;
+        const el2 = document.getElementById('invoiceDoc');
+        if (el2) { el2.style.transform = ''; el2.style.marginBottom = ''; }
         showToast('저장 실패: ' + e.message);
     }
+}
+</script>
+<!-- ── PWA Service Worker 등록 ── -->
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js')
+      .then(reg => {
+        console.log('[PWA] Service Worker 등록 완료:', reg.scope);
+
+        // 새 버전 감지 → 업데이트 알림
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing;
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              // 업데이트 토스트 표시
+              const toast = document.createElement('div');
+              toast.style.cssText = [
+                'position:fixed', 'bottom:80px', 'left:50%',
+                'transform:translateX(-50%)',
+                'background:#111', 'color:#fff',
+                'padding:12px 20px', 'border-radius:24px',
+                'font-size:13px', 'z-index:9999',
+                'display:flex', 'gap:12px', 'align-items:center',
+                'box-shadow:0 4px 20px rgba(0,0,0,0.3)'
+              ].join(';');
+              toast.innerHTML = `새 버전이 있어요! <button onclick="location.reload()" style="background:#fff;color:#111;border:none;border-radius:12px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer;">새로고침</button>`;
+              document.body.appendChild(toast);
+            }
+          });
+        });
+      })
+      .catch(err => console.warn('[PWA] Service Worker 등록 실패:', err));
+  });
 }
 </script>
 </body>
