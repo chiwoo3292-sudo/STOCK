@@ -1,66 +1,84 @@
 <!DOCTYPE html>
 <html lang="ko"><head><meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1a1613">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>우드 플로어 색상표 & MINI게임</title>
 <style>
   :root{--bg:#1a1613;--card:#262019;--line:#3a3229;--txt:#ece4d8;--sub:#a89a86;
-    --accent:#c8a06a;--correct:#4a7c59;--wrong:#9c4a3c;}
-  *{box-sizing:border-box;margin:0;padding:0}
+    --accent:#c8a06a;--correct:#4a7c59;--wrong:#9c4a3c;
+    --safe-top:env(safe-area-inset-top,0px);--safe-bot:env(safe-area-inset-bottom,0px);}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html{-webkit-text-size-adjust:100%}
   body{background:var(--bg);color:var(--txt);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding-bottom:60px}
-  .tabs{position:sticky;top:0;z-index:10;display:flex;background:var(--bg);
-    border-bottom:1px solid var(--line);max-width:900px;margin:0 auto}
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    padding-bottom:calc(40px + var(--safe-bot));overscroll-behavior-y:none}
+  .tabs{position:sticky;top:0;z-index:20;display:flex;background:var(--bg);
+    border-bottom:1px solid var(--line);padding-top:var(--safe-top)}
   .tabs button{flex:1;background:none;border:none;color:var(--sub);
-    padding:18px 10px;font-size:15px;font-weight:600;cursor:pointer;border-bottom:2.5px solid transparent}
+    padding:16px 8px;font-size:15px;font-weight:600;cursor:pointer;
+    border-bottom:2.5px solid transparent;touch-action:manipulation}
   .tabs button.on{color:var(--accent);border-bottom-color:var(--accent)}
-  .page{max-width:900px;margin:0 auto;padding:20px 16px 0;display:none}
+  .page{padding:16px 12px 0;display:none;max-width:640px;margin:0 auto}
   .page.on{display:block}
-  h1{font-size:22px;color:var(--accent);text-align:center;margin-bottom:4px}
-  .subt{text-align:center;color:var(--sub);font-size:13px;margin-bottom:22px}
-  h2{font-size:17px;margin:32px 0 4px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  h1{font-size:20px;color:var(--accent);text-align:center;margin-bottom:4px}
+  .subt{text-align:center;color:var(--sub);font-size:12px;margin-bottom:16px}
+  h2{font-size:16px;margin:26px 0 4px;padding-bottom:7px;border-bottom:1px solid var(--line)}
   h2 span{color:var(--accent)}
-  .dir{color:var(--sub);font-size:12px;margin-bottom:16px}
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:14px}
+  .dir{color:var(--sub);font-size:11px;margin-bottom:12px}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
   .card{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;position:relative}
-  .rank{position:absolute;top:8px;left:8px;background:rgba(0,0,0,.6);color:#fff;
-    width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;z-index:2}
+  .rank{position:absolute;top:7px;left:7px;background:rgba(0,0,0,.65);color:#fff;
+    width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;z-index:2}
   .thumb{width:100%;aspect-ratio:9/11;background:#000}
   .thumb img{width:100%;height:100%;object-fit:cover;display:block}
-  .swatch{padding:8px;text-align:center;font-size:12px;font-weight:700;letter-spacing:.5px}
-  .code{padding:8px 8px 2px;font-size:14px;font-weight:600;text-align:center}
-  .metric{padding:0 8px 10px;font-size:11px;color:var(--sub);text-align:center}
-  .barline{display:flex;height:40px;border-radius:8px;overflow:hidden;margin-bottom:18px;border:1px solid var(--line)}
+  .swatch{padding:7px;text-align:center;font-size:11px;font-weight:700;letter-spacing:.3px}
+  .code{padding:7px 6px 2px;font-size:13px;font-weight:600;text-align:center}
+  .metric{padding:0 6px 9px;font-size:10px;color:var(--sub);text-align:center}
+  .barline{display:flex;height:34px;border-radius:8px;overflow:hidden;margin-bottom:14px;border:1px solid var(--line)}
   .barline div{flex:1}
-  .sortbar{display:flex;gap:8px;justify-content:center;margin-bottom:8px;position:sticky;top:57px;
-    background:var(--bg);padding:10px 0;z-index:5}
-  .sortbar button{background:var(--card);color:var(--sub);border:1px solid var(--line);
-    padding:9px 18px;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer}
+  .sortbar{display:flex;gap:6px;justify-content:center;position:sticky;
+    top:calc(53px + var(--safe-top));background:var(--bg);padding:10px 0;z-index:15}
+  .sortbar button{flex:1;max-width:120px;background:var(--card);color:var(--sub);border:1px solid var(--line);
+    padding:11px 8px;border-radius:22px;font-size:13px;font-weight:600;cursor:pointer;touch-action:manipulation}
   .sortbar button.on{background:var(--accent);color:#221a10;border-color:var(--accent)}
-  .sortnote{text-align:center;color:var(--sub);font-size:12px;margin-bottom:18px}
+  .sortnote{text-align:center;color:var(--sub);font-size:11px;margin-bottom:14px}
   /* game */
-  .gwrap{max-width:520px;margin:0 auto}
+  .gwrap{max-width:480px;margin:0 auto}
   .bar{display:flex;justify-content:space-between;align-items:center;background:var(--card);
-    border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-bottom:16px;font-size:14px}
+    border:1px solid var(--line);border-radius:12px;padding:11px 14px;margin-bottom:14px;font-size:14px}
   .bar b{color:var(--accent)}
-  .filter{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;justify-content:center}
-  .filter button{background:var(--card);color:var(--sub);border:1px solid var(--line);padding:7px 14px;border-radius:20px;font-size:13px;cursor:pointer}
+  .filter{display:flex;gap:6px;margin-bottom:14px;justify-content:center}
+  .filter button{flex:1;background:var(--card);color:var(--sub);border:1px solid var(--line);
+    padding:9px 6px;border-radius:20px;font-size:12px;cursor:pointer;touch-action:manipulation}
   .filter button.on{background:var(--accent);color:#221a10;border-color:var(--accent);font-weight:600}
-  .imgbox{width:100%;aspect-ratio:9/11;border-radius:14px;overflow:hidden;border:1px solid var(--line);margin-bottom:18px;background:#000}
+  .imgbox{width:100%;aspect-ratio:9/11;max-height:52vh;border-radius:14px;overflow:hidden;
+    border:1px solid var(--line);margin-bottom:14px;background:#000}
   .imgbox img{width:100%;height:100%;object-fit:cover;display:block}
   .opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .opt{background:var(--card);border:1.5px solid var(--line);color:var(--txt);padding:16px 10px;border-radius:12px;font-size:16px;font-weight:600;cursor:pointer;transition:.15s;letter-spacing:.5px}
-  .opt:hover{border-color:var(--accent)}
+  .opt{background:var(--card);border:1.5px solid var(--line);color:var(--txt);padding:18px 10px;
+    border-radius:12px;font-size:17px;font-weight:600;cursor:pointer;transition:.15s;
+    letter-spacing:.5px;touch-action:manipulation;min-height:58px}
+  .opt:active{transform:scale(.97)}
   .opt.correct{background:var(--correct);border-color:var(--correct);color:#fff}
   .opt.wrong{background:var(--wrong);border-color:var(--wrong);color:#fff}
   .opt:disabled{cursor:default}
-  .next{width:100%;margin-top:16px;background:var(--accent);color:#221a10;border:none;padding:15px;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;opacity:0;pointer-events:none;transition:.2s}
+  .next{width:100%;margin-top:14px;background:var(--accent);color:#221a10;border:none;padding:17px;
+    border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;opacity:0;pointer-events:none;
+    transition:.2s;touch-action:manipulation}
   .next.show{opacity:1;pointer-events:auto}
+  .next:active{transform:scale(.98)}
   .msg{text-align:center;margin-top:12px;font-size:15px;font-weight:600;min-height:22px}
   .msg.ok{color:#7fc98f}.msg.no{color:#e08a7c}
-  .end{text-align:center;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:32px 20px}
-  .end h2{color:var(--accent);font-size:24px;margin-bottom:10px;border:none}
-  .end p{color:var(--sub);margin-bottom:20px;font-size:15px}
-  .end button{background:var(--accent);color:#221a10;border:none;padding:14px 28px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer}
+  .end{text-align:center;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:34px 20px}
+  .end h2{color:var(--accent);font-size:23px;margin-bottom:10px;border:none}
+  .end p{color:var(--sub);margin-bottom:22px;font-size:15px}
+  .end button{background:var(--accent);color:#221a10;border:none;padding:15px 30px;border-radius:12px;
+    font-size:15px;font-weight:700;cursor:pointer;touch-action:manipulation}
+  /* 큰 화면에서는 그리드 열 늘림 */
+  @media(min-width:500px){.grid{grid-template-columns:repeat(3,1fr)}}
+  @media(min-width:640px){.grid{grid-template-columns:repeat(4,1fr)}}
 </style></head>
 <body>
 <div class="tabs">
@@ -113,19 +131,13 @@ function showTab(t){
   document.getElementById('page-game').classList.toggle('on',t==='game');
   window.scrollTo(0,0);
 }
-
-/* ===== 색상 정렬표 ===== */
 let curSort='bright';
 const SORT_LABEL={
-  bright:{key:'bright',name:'밝기순',note:'← 밝음 · 어두움 → (사람 눈에 보이는 밝기 기준)',lo:'밝음',hi:'어두움'},
-  sat:{key:'sat',name:'채도순',note:'← 선명함 · 탁함 → (색의 진하기 기준)',lo:'선명',hi:'탁함'},
-  val:{key:'val',name:'명도순',note:'← 밝음 · 어두움 → (HSV 명도값 기준)',lo:'밝음',hi:'어두움'}
+  bright:{key:'bright',note:'← 밝음 · 어두움 → (사람 눈에 보이는 밝기 기준)',lo:'밝음',hi:'어두움'},
+  sat:{key:'sat',note:'← 선명함 · 탁함 → (색의 진하기 기준)',lo:'선명',hi:'탁함'},
+  val:{key:'val',note:'← 밝음 · 어두움 → (HSV 명도값 기준)',lo:'밝음',hi:'어두움'}
 };
-function setSort(s){
-  curSort=s;
-  document.querySelectorAll('.sortbar button').forEach(b=>b.classList.toggle('on',b.dataset.s===s));
-  renderColors();
-}
+function setSort(s){curSort=s;document.querySelectorAll('.sortbar button').forEach(b=>b.classList.toggle('on',b.dataset.s===s));renderColors();}
 function renderColors(){
   const cfg=SORT_LABEL[curSort];
   document.getElementById('sortnote').textContent=cfg.note;
@@ -136,19 +148,16 @@ function renderColors(){
     let grad='<div class="barline">'+arr.map(d=>`<div style="background:${d.hex}"></div>`).join('')+'</div>';
     let cards=arr.map((d,i)=>{
       let txtcol=d.lum>140?'#1a1613':'#ece4d8';
-      let val = curSort==='bright'?('밝기 '+d.bright):curSort==='sat'?('채도 '+d.sat):('명도 '+d.val);
+      let val=curSort==='bright'?('밝기 '+d.bright):curSort==='sat'?('채도 '+d.sat):('명도 '+d.val);
       return `<div class="card"><div class="rank">${i+1}</div>
       <div class="thumb"><img src="data:image/jpeg;base64,${d.img}" alt="${d.code}"></div>
       <div class="swatch" style="background:${d.hex};color:${txtcol}">${d.hex}</div>
       <div class="code">${d.code}</div><div class="metric">${val}</div></div>`;
     }).join('');
-    html+=`<h2><span>${title}</span> (${arr.length}개)</h2>
-    <p class="dir">← ${cfg.lo} · ${cfg.hi} →</p>${grad}<div class="grid">${cards}</div>`;
+    html+=`<h2><span>${title}</span> (${arr.length}개)</h2><p class="dir">← ${cfg.lo} · ${cfg.hi} →</p>${grad}<div class="grid">${cards}</div>`;
   });
   document.getElementById('colorbody').innerHTML=html;
 }
-
-/* ===== MINI게임 ===== */
 let pool=[],order=[],idx=0,score=0,answered=false,curG='all';
 function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];}return a;}
 function buildPool(){
@@ -156,8 +165,7 @@ function buildPool(){
   order=shuffle(pool);idx=0;score=0;answered=false;
   document.getElementById('qtot').textContent=order.length;
   document.getElementById('end').style.display='none';
-  document.getElementById('gcore').style.display='block';
-  render();
+  document.getElementById('gcore').style.display='block';render();
 }
 function render(){
   answered=false;const q=order[idx];
@@ -169,8 +177,7 @@ function render(){
   let others=pool.filter(d=>d.code!==q.code);
   let sameGrp=others.filter(d=>d.grp===q.grp);
   let base=sameGrp.length>=3?sameGrp:others;
-  let wrong=shuffle(base).slice(0,3);
-  let choices=shuffle([q,...wrong]);
+  let wrong=shuffle(base).slice(0,3);let choices=shuffle([q,...wrong]);
   const ob=document.getElementById('opts');ob.innerHTML='';
   choices.forEach(c=>{const b=document.createElement('button');b.className='opt';b.textContent=c.code;b.onclick=()=>pick(b,c,q);ob.appendChild(b);});
 }
@@ -195,8 +202,6 @@ function restart(){buildPool();}
 document.querySelectorAll('#gfilter button').forEach(b=>{
   b.onclick=()=>{document.querySelectorAll('#gfilter button').forEach(x=>x.classList.remove('on'));b.classList.add('on');curG=b.dataset.g;buildPool();};
 });
-
-renderColors();
-buildPool();
+renderColors();buildPool();
 </script>
 </body></html>
